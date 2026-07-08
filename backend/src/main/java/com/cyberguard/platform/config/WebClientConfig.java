@@ -13,8 +13,14 @@ public class WebClientConfig {
 
     @Bean
     public WebClient aiServiceWebClient() {
+        // Render's render.yaml wires this from another service's "hostport" (host:port,
+        // no scheme) for private-network calls, whereas local/.env values are already
+        // full URLs (http://localhost:8000). Normalize so both resolve correctly.
+        String url = aiServiceBaseUrl.matches("^[a-zA-Z][a-zA-Z0-9+.-]*://.*")
+                ? aiServiceBaseUrl
+                : "http://" + aiServiceBaseUrl;
         return WebClient.builder()
-                .baseUrl(aiServiceBaseUrl)
+                .baseUrl(url)
                 .build();
     }
 }

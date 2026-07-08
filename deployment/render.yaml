@@ -25,7 +25,7 @@ services:
         fromService:
           type: web
           name: cyberguard-ai-service
-          property: host
+          property: hostport
       - key: CORS_ALLOWED_ORIGINS
         sync: false
 
