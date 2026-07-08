@@ -32,7 +32,9 @@ public class AiServiceClient {
                     .bodyValue(request)
                     .retrieve()
                     .bodyToMono(AiPredictionResponse.class)
-                    .timeout(Duration.ofSeconds(5))
+                    // 30s tolerates a Render free-tier cold start (the AI service loads several
+                    // .joblib model files at boot); 5s was tuned for an always-warm local dev instance.
+                    .timeout(Duration.ofSeconds(30))
                     .block();
         } catch (Exception ex) {
             log.warn("AI service unavailable, using fallback heuristic classification: {}", ex.getMessage());
@@ -51,7 +53,7 @@ public class AiServiceClient {
                     .bodyValue(body)
                     .retrieve()
                     .bodyToMono(Map.class)
-                    .timeout(Duration.ofSeconds(10))
+                    .timeout(Duration.ofSeconds(30))
                     .block();
 
             return response != null ? String.valueOf(response.get("reply")) : fallbackAssistantReply();
