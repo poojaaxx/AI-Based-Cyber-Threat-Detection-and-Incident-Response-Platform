@@ -139,26 +139,26 @@ is temporarily unreachable.
 
 ## 📸 Screenshots
 
-> Screenshots below are placeholders — add real captures to `docs/media/` and replace the italic
-> lines with `![Alt text](docs/media/filename.png)`.
+> Captured directly from the live deployed app at
+> [ai-based-cyber-threat-detection-and.vercel.app](https://ai-based-cyber-threat-detection-and.vercel.app).
 
 #### Dashboard
-*🖼️ Screenshot coming soon*
+![Dashboard](docs/screenshots/dashboard.png)
 
 #### Threat Detection
-*🖼️ Screenshot coming soon*
+![Threat Detection](docs/screenshots/threat-detection.png)
 
 #### Analytics
-*🖼️ Screenshot coming soon*
+![Analytics](docs/screenshots/analytics.png)
 
 #### Reports
-*🖼️ Screenshot coming soon*
+![Reports](docs/screenshots/reports.png)
 
 #### Notifications
-*🖼️ Screenshot coming soon*
+![Notifications](docs/screenshots/notifications.png)
 
 #### AI Assistant
-*🖼️ Screenshot coming soon*
+![AI Assistant](docs/screenshots/ai-assistant.png)
 
 ---
 
