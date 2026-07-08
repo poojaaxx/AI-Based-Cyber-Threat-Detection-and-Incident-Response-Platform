@@ -8,7 +8,10 @@ services:
   - type: web
     name: cyberguard-backend
     runtime: docker
-    dockerfilePath: ./backend/Dockerfile
+    # dockerfilePath is resolved relative to dockerContext (not the repo root) once
+    # dockerContext points at a subdirectory - "./backend/Dockerfile" here would
+    # resolve to the nonexistent ./backend/backend/Dockerfile.
+    dockerfilePath: Dockerfile
     dockerContext: ./backend
     plan: free
     healthCheckPath: /actuator/health
@@ -32,7 +35,7 @@ services:
   - type: web
     name: cyberguard-ai-service
     runtime: docker
-    dockerfilePath: ./ai-service/Dockerfile
+    dockerfilePath: Dockerfile
     dockerContext: ./ai-service
     plan: free
     healthCheckPath: /health
