@@ -8,11 +8,11 @@ services:
   - type: web
     name: cyberguard-backend
     runtime: docker
-    # dockerfilePath is resolved relative to dockerContext (not the repo root) once
-    # dockerContext points at a subdirectory - "./backend/Dockerfile" here would
-    # resolve to the nonexistent ./backend/backend/Dockerfile.
-    dockerfilePath: Dockerfile
-    dockerContext: ./backend
+    # Both paths are relative to the repo root (Render docs). A leading "./" here
+    # previously produced "open Dockerfile: no such file or directory" during the
+    # build - matching the docs' own no-leading-dot-slash form resolves it.
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
     plan: free
     healthCheckPath: /actuator/health
     envVars:
@@ -35,8 +35,8 @@ services:
   - type: web
     name: cyberguard-ai-service
     runtime: docker
-    dockerfilePath: Dockerfile
-    dockerContext: ./ai-service
+    dockerfilePath: ai-service/Dockerfile
+    dockerContext: ai-service
     plan: free
     healthCheckPath: /health
     envVars:
