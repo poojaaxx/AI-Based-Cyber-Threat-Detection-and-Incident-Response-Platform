@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Overflow anchor off avoids scroll-jump when skeletons swap for real content */
+html {
+  overflow-anchor: none;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0e17;
+}
+::-webkit-scrollbar-thumb {
+  background: #1f2937;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #00e5c7;
+}
+
+@layer components {
+  /* Cards: soft elevation + subtle gradient sheen + subtle border, with an opt-in hover-lift for clickable cards.
+     The sheen and the base tone must be ONE comma-separated background-image value (not two separate bg-*
+     utilities) - CSS background-image is a single property, so a second utility would silently replace the
+     first instead of layering over it, leaving the card fully transparent. */
+  .cg-card {
+    @apply relative border border-cg-border rounded-xl p-5 shadow-md shadow-black/20 transition-shadow duration-200;
+    background-image: linear-gradient(155deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0) 45%),
+      linear-gradient(180deg, #111827 0%, #0e1420 100%);
+  }
+  .cg-card-hover {
+    @apply hover:shadow-lg hover:shadow-black/30 hover:border-slate-600/60 hover:-translate-y-0.5 transition-all duration-200;
+  }
+  /* Left-edge severity accent, for cards that summarize a single severity/status */
+  .cg-card-accent-critical { @apply border-l-[3px] border-l-cg-danger; }
+  .cg-card-accent-high { @apply border-l-[3px] border-l-orange-400; }
+  .cg-card-accent-medium { @apply border-l-[3px] border-l-cg-warning; }
+  .cg-card-accent-low { @apply border-l-[3px] border-l-cg-info; }
+  .cg-card-accent-success { @apply border-l-[3px] border-l-cg-success; }
+
+  /* Top-edge severity accent + glow, for stat cards that should immediately draw the eye */
+  .cg-card-top-critical { @apply border-t-2 border-t-cg-danger shadow-glow-danger; }
+  .cg-card-top-high { @apply border-t-2 border-t-orange-400; }
+  .cg-card-top-warning { @apply border-t-2 border-t-cg-warning shadow-glow-warning; }
+  .cg-card-top-info { @apply border-t-2 border-t-cg-info shadow-glow-info; }
+  .cg-card-top-success { @apply border-t-2 border-t-cg-success shadow-glow-success; }
+  .cg-card-top-accent { @apply border-t-2 border-t-cg-accent shadow-glow; }
+
+  .cg-input {
+    @apply bg-cg-surface-alt border border-cg-border rounded-md px-3 py-2 text-sm text-slate-200 placeholder-slate-500 transition
+      focus:outline-none focus-visible:ring-2 focus-visible:ring-cg-accent/50 focus:border-cg-accent
+      disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .cg-btn-base {
+    @apply font-semibold px-4 py-2 rounded-md transition-all duration-150 active:scale-[0.97]
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-cg-bg
+      disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
+  }
+  .cg-btn-primary {
+    @apply cg-btn-base bg-cg-accent text-cg-bg hover:bg-cg-accent/90 hover:shadow-glow focus-visible:ring-cg-accent/60;
+  }
+  .cg-btn-secondary {
+    @apply cg-btn-base bg-cg-surface-alt border border-cg-border text-slate-200 font-medium hover:border-cg-accent/50 hover:bg-cg-surface-alt/70 focus-visible:ring-cg-accent/40;
+  }
+  .cg-btn-success {
+    @apply cg-btn-base bg-cg-success text-cg-bg hover:bg-cg-success/90 focus-visible:ring-cg-success/50;
+  }
+  .cg-btn-warning {
+    @apply cg-btn-base bg-cg-warning text-cg-bg hover:bg-cg-warning/90 focus-visible:ring-cg-warning/50;
+  }
+  .cg-btn-danger {
+    @apply cg-btn-base bg-cg-danger text-white hover:bg-cg-danger/90 focus-visible:ring-cg-danger/50;
+  }
+  .cg-btn-outline {
+    @apply cg-btn-base bg-transparent border border-cg-accent text-cg-accent font-medium hover:bg-cg-accent/10 focus-visible:ring-cg-accent/40;
+  }
+  .cg-btn-ghost {
+    @apply cg-btn-base bg-transparent text-slate-300 font-medium hover:bg-cg-surface-alt focus-visible:ring-slate-500/40;
+  }
+
+  /* Chip-style badges: rounded-full + a subtle neutral ring for definition against any background color */
+  .cg-badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide
+      ring-1 ring-inset ring-white/10;
+  }
+
+  .cg-table-row {
+    @apply border-b border-cg-border last:border-0 hover:bg-cg-surface-alt/50 transition-colors duration-100;
+  }
+}

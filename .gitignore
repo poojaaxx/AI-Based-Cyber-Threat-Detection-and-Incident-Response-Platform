@@ -1,0 +1,33 @@
+# Backend (Maven / Java)
+backend/target/
+*.class
+*.jar
+!backend/.mvn/wrapper/*.jar
+
+# AI Service (Python)
+ai-service/venv/
+ai-service/__pycache__/
+ai-service/app/**/__pycache__/
+ai-service/app/data/*.joblib
+*.pyc
+
+# Frontend (Node)
+frontend/node_modules/
+frontend/dist/
+
+# Environment files
+.env
+**/.env
+!**/.env.example
+
+.claude/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

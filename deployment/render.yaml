@@ -1,0 +1,41 @@
+# Render.com Blueprint - deploys the Spring Boot backend and FastAPI AI service.
+# Frontend is deployed separately to Vercel (see deployment/vercel.json).
+#
+# Usage: connect this repo in the Render dashboard as a "Blueprint" and it will
+# provision both services + a managed MySQL-compatible database automatically.
+
+services:
+  - type: web
+    name: cyberguard-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: AI_SERVICE_URL
+        fromService:
+          type: web
+          name: cyberguard-ai-service
+          property: host
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+
+  - type: web
+    name: cyberguard-ai-service
+    runtime: docker
+    dockerfilePath: ./ai-service/Dockerfile
+    dockerContext: ./ai-service
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
