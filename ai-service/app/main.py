@@ -1,5 +1,11 @@
 import logging
 
+# Imported first, deliberately, before anything that imports shap (which pulls in
+# numba/llvmlite). On Windows, loading numba/llvmlite's native runtime before
+# torch's own DLLs (c10.dll et al.) causes a DLL-init failure (WinError 1114);
+# importing torch first avoids it. Keep this above the app.routers import below.
+import torch  # noqa: F401
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

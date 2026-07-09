@@ -3,10 +3,18 @@ uvicorn[standard]==0.30.1
 pydantic==2.7.4
 scikit-learn==1.5.0
 pandas==2.2.2
-numpy==1.26.4
+# >=2 because shap>=0.45 requires numpy>=2 (see the shap pin below) - verified
+# compatible with scikit-learn 1.5.0, pandas 2.2.2, torch 2.13.0+cpu, and the
+# already-trained threat_model.joblib.
+numpy==2.4.6
 joblib==1.4.2
 python-dotenv==1.0.1
 httpx==0.27.0
 pyarrow==24.0.0
-torch==2.13.0
+# CPU-only wheel, explicitly - plain "torch==2.13.0" from the default PyPI index
+# pulls the full CUDA/GPU build (multi-GB nvidia-*/cuda-toolkit/triton packages)
+# on Linux, which bloats and slows the Docker build for no benefit on a
+# CPU-only host (Render). See https://pytorch.org/get-started/locally/.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.13.0+cpu
 shap==0.51.0
