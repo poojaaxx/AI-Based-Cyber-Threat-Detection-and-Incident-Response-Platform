@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.ml.explainability import build_attention_explanation
 from app.ml.lstm_model_loader import temporal_threat_model
@@ -27,7 +27,10 @@ def predict_temporal(request: TemporalPredictionRequest) -> TemporalPredictionRe
     ("Model B"). Independent of, and not a replacement for, the /predict
     RandomForest route above - see TemporalPredictionResponse.note.
     """
-    result = temporal_threat_model.predict_sequence([r.model_dump() for r in request.records])
+    try:
+        result = temporal_threat_model.predict_sequence([r.model_dump() for r in request.records])
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
     return TemporalPredictionResponse(
         threatCategory=result["category"],
         confidenceScore=round(result["confidence"], 4),

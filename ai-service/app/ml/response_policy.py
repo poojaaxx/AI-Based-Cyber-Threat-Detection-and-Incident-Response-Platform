@@ -32,9 +32,12 @@ Action = one of BLOCK_IP, DISABLE_USER, QUARANTINE, NOTIFY_ONLY, ESCALATE
 Run with:  python -m app.ml.response_policy
 """
 import json
+import logging
 import random
 
 from app.config import DATA_DIR
+
+logger = logging.getLogger("ai-service")
 
 Q_TABLE_PATH = DATA_DIR / "q_table.json"
 
@@ -179,7 +182,16 @@ def train_and_save() -> dict:
 class ResponsePolicy:
     def __init__(self):
         self.q_table = None
-        self.load()
+        self.unavailable_reason = None
+        try:
+            self.load()
+        except Exception as exc:
+            # Non-fatal, same reasoning as TemporalThreatModel in
+            # lstm_model_loader.py: this is a module-level singleton built at
+            # import time, so a training failure here must not crash the
+            # whole ai-service over the (unrelated) adaptive-response route.
+            self.unavailable_reason = str(exc)
+            logger.error(f"Q-learning response policy unavailable, /policy/recommend-action will return 503: {exc}")
 
     def load(self):
         if not Q_TABLE_PATH.exists():
@@ -187,6 +199,8 @@ class ResponsePolicy:
         self.q_table = load_q_table()
 
     def recommend(self, threat_type: str, severity: str, confidence_score: float) -> dict:
+        if self.q_table is None:
+            raise RuntimeError(f"Q-learning response policy is not available in this deployment ({self.unavailable_reason}).")
         threat_type = threat_type if threat_type in THREAT_TYPES else "UNKNOWN"
         severity = severity if severity in SEVERITIES else "LOW"
         bucket = confidence_bucket(confidence_score)

@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.ml.response_policy import response_policy
 from app.schemas.policy import PolicyRecommendationRequest, PolicyRecommendationResponse
@@ -14,5 +14,8 @@ def recommend_action(request: PolicyRecommendationRequest) -> PolicyRecommendati
     tabular Q-learning policy in app/ml/response_policy.py, along with the
     learned Q-value for every action so the caller can see the full ranking.
     """
-    result = response_policy.recommend(request.threatType, request.severity, request.confidenceScore)
+    try:
+        result = response_policy.recommend(request.threatType, request.severity, request.confidenceScore)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
     return PolicyRecommendationResponse(**result)

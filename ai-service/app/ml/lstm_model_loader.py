@@ -26,7 +26,21 @@ class TemporalThreatModel:
         self.scaler = None
         self.label_encoder = None
         self.window = None
-        self.load()
+        self.unavailable_reason = None
+        try:
+            self.load()
+        except Exception as exc:
+            # Deliberately non-fatal: this is a module-level singleton
+            # constructed at import time (see bottom of this file), so an
+            # unhandled exception here would crash the entire ai-service on
+            # boot - including the unrelated, working RandomForest /predict
+            # route - over a problem with only the experimental temporal
+            # detector (e.g. the NSL-KDD dataset not being present in a
+            # deployment whose Docker build context doesn't include it).
+            # predict_sequence() below raises a clear, catchable error for
+            # just the /predict/temporal route instead.
+            self.unavailable_reason = str(exc)
+            logger.error(f"Attention-LSTM temporal detector unavailable, /predict/temporal will return 503: {exc}")
 
     def load(self):
         preprocessing_path = KDD_PROCESSED_DIR / "preprocessing.joblib"
@@ -74,6 +88,11 @@ class TemporalThreatModel:
         return np.array(row, dtype=np.float32)
 
     def predict_sequence(self, records: list[dict]) -> dict:
+        if self.model is None:
+            raise RuntimeError(
+                "Attention-LSTM temporal detector is not available in this deployment "
+                f"({self.unavailable_reason})."
+            )
         records = list(records)
         if len(records) < self.window:
             pad = [records[0]] * (self.window - len(records))
