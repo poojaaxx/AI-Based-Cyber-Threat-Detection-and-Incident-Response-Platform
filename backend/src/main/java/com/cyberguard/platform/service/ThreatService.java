@@ -65,10 +65,14 @@ public class ThreatService {
                 .riskScore(BigDecimal.valueOf(prediction.getRiskScore() != null ? prediction.getRiskScore() : 0))
                 .reasoning(prediction.getReasoning())
                 .contributingFactors(serializeFactors(prediction.getContributingFactors()))
+                .shapExplanation(serializeFactors(prediction.getShapExplanation()))
                 .build();
 
         threat = threatRepository.save(threat);
-        Incident incident = responseActionService.autoRespond(threat);
+        // Routes to either the RL-based autoRespondAdaptive() or the static
+        // autoRespond() playbook depending on the adaptive-mode-enabled config
+        // flag (see ResponseActionService.handleThreatResponse).
+        Incident incident = responseActionService.handleThreatResponse(threat);
         sseHubService.broadcastDashboardUpdate("THREAT_DETECTED");
 
         auditLogService.log(actor, "SIMULATE_THREAT_DETECTION", "Threat", threat.getId(),

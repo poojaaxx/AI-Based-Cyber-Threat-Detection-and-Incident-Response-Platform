@@ -3,10 +3,12 @@ package com.cyberguard.platform.controller;
 import com.cyberguard.platform.dto.request.ChangePasswordRequest;
 import com.cyberguard.platform.dto.request.NotificationPreferenceRequest;
 import com.cyberguard.platform.dto.request.UpdateProfileRequest;
+import com.cyberguard.platform.dto.response.AdaptiveModeResponse;
 import com.cyberguard.platform.dto.response.MessageResponse;
 import com.cyberguard.platform.entity.ApiConfiguration;
 import com.cyberguard.platform.entity.NotificationPreference;
 import com.cyberguard.platform.security.CustomUserDetails;
+import com.cyberguard.platform.service.ResponseActionService;
 import com.cyberguard.platform.service.SettingsService;
 import com.cyberguard.platform.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,6 +27,7 @@ public class SettingsController {
 
     private final SettingsService settingsService;
     private final UserService userService;
+    private final ResponseActionService responseActionService;
 
     @PutMapping("/profile")
     public ResponseEntity<?> updateProfile(@RequestBody UpdateProfileRequest request,
@@ -60,5 +63,19 @@ public class SettingsController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiConfiguration> regenerateApiKey(@AuthenticationPrincipal CustomUserDetails principal) {
         return ResponseEntity.ok(settingsService.regenerateApiKey(principal.getId()));
+    }
+
+    /** Readable by any authenticated user (not sensitive), so the Settings page can show the
+     * current mode even to non-admins; only ADMIN can flip it (see PUT below). */
+    @GetMapping("/adaptive-response-mode")
+    public ResponseEntity<AdaptiveModeResponse> getAdaptiveResponseMode() {
+        return ResponseEntity.ok(new AdaptiveModeResponse(responseActionService.isAdaptiveModeEnabled()));
+    }
+
+    @PutMapping("/adaptive-response-mode")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<AdaptiveModeResponse> setAdaptiveResponseMode(@RequestBody AdaptiveModeResponse request) {
+        responseActionService.setAdaptiveModeEnabled(request.isEnabled());
+        return ResponseEntity.ok(new AdaptiveModeResponse(responseActionService.isAdaptiveModeEnabled()));
     }
 }

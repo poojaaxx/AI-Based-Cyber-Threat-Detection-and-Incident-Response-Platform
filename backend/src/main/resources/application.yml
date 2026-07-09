@@ -41,6 +41,12 @@ app:
     refresh-token-expiration-ms: ${JWT_REFRESH_EXP:604800000}  # 7 days
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  response:
+    # Toggles ResponseActionService.handleThreatResponse() between the RL-based
+    # autoRespondAdaptive() (Q-learning policy) and the original static
+    # autoRespond() playbook. Falls back to autoRespond() automatically if the
+    # AI service is unreachable, regardless of this flag.
+    adaptive-mode-enabled: ${ADAPTIVE_RESPONSE_ENABLED:false}
 
 ai-service:
   base-url: ${AI_SERVICE_URL:http://localhost:8000}

@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import CORS_ALLOWED_ORIGINS
-from app.routers import assistant, health, predict
+from app.routers import assistant, health, policy, predict
 
 logging.basicConfig(level=logging.INFO)
 
@@ -26,6 +26,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(predict.router)
 app.include_router(assistant.router)
+app.include_router(policy.router)
 
 
 @app.get("/")

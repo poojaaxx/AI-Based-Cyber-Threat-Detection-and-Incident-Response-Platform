@@ -92,6 +92,7 @@ export default function ThreatDetail() {
           <Info label="Source" value={`${threat.sourceIp || '-'}:${threat.sourcePort || '-'}`} />
           <Info label="Destination" value={`${threat.destinationIp || '-'}:${threat.destinationPort || '-'}`} />
           <Info label="Detected At" value={new Date(threat.detectedAt).toLocaleString()} />
+          <Info label="Detection Model" value="RandomForest (Model A)" hint="The live detection pipeline always uses the RandomForest classifier today; the experimental attention-LSTM temporal detector (Model B) is available via a separate endpoint but isn't yet wired into this flow." />
         </div>
 
         <div>
@@ -119,9 +120,9 @@ export default function ThreatDetail() {
   );
 }
 
-function Info({ label, value }) {
+function Info({ label, value, hint }) {
   return (
-    <div>
+    <div title={hint}>
       <p className="text-xs text-slate-500 uppercase">{label}</p>
       <p className="text-slate-200 font-mono text-sm">{value}</p>
     </div>

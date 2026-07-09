@@ -21,4 +21,7 @@ public class AiPredictionResponse {
     private Double riskScore;
     private String reasoning;
     private List<ContributingFactor> contributingFactors = new ArrayList<>();
+    /** Per-instance SHAP explanation (Phase 3 addition to the AI service's /predict response).
+     * Optional/additive - defaults to empty for any AI service response that doesn't send it. */
+    private List<ContributingFactor> shapExplanation = new ArrayList<>();
 }

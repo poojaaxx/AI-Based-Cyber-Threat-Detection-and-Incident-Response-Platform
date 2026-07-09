@@ -79,6 +79,13 @@ public class Threat {
     @Column(name = "contributing_factors", columnDefinition = "TEXT")
     private String contributingFactors;
 
+    /** JSON-serialized List&lt;ContributingFactor&gt; SHAP explanation from the AI service (Phase 3
+     * addition). Nullable - older threats predate this field and simply have none; the frontend
+     * falls back to the contributingFactors-only display when this is empty. */
+    @Lob
+    @Column(name = "shap_explanation", columnDefinition = "TEXT")
+    private String shapExplanation;
+
     @Column(name = "detected_at", nullable = false)
     private LocalDateTime detectedAt;
 

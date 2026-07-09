@@ -5,6 +5,14 @@ Rather than static placeholder text, contributing factors are derived from the
 trained RandomForest's own `feature_importances_` combined with the actual
 submitted feature values, so "why was this flagged?" reflects what the model
 actually learned and what the specific request contained.
+
+Phase 3 extension: build_contributing_factors() below ranks features by the
+model's *global* feature_importances_ - the same ranking every request gets,
+regardless of input. build_shap_factors() adds a genuine per-instance
+explanation (SHAP, for the RandomForest) and build_attention_explanation()
+adds one for the attention-LSTM (Model B), using the attention weights the
+model itself produced for that specific input sequence. Both new functions
+are additive - build_contributing_factors()'s behavior/shape is unchanged.
 """
 from typing import Any, Dict, List
 
@@ -98,6 +106,54 @@ def build_contributing_factors(request, protocol_label: str, feature_importances
                                                 "durationMs", "failedLogins") else raw_values[feature]),
         })
     return factors
+
+
+def build_shap_factors(
+    shap_values_row: "Any", feature_order: List[str], raw_values: Dict[str, Any], top_n: int = 5
+) -> List[Dict[str, Any]]:
+    """
+    Per-instance SHAP contributing factors for the RandomForest (Model A),
+    computed from shap.TreeExplainer on the trained model. Unlike
+    build_contributing_factors() (ranked by global feature_importances_ - the
+    same order for every request), this ranks by each feature's actual SHAP
+    value for THIS specific input, so both the ranking and the magnitudes
+    genuinely vary from one request to the next.
+    """
+    ranked = sorted(zip(feature_order, shap_values_row), key=lambda x: abs(x[1]), reverse=True)
+    factors = []
+    for feature, shap_value in ranked[:top_n]:
+        shap_value = float(shap_value)
+        direction = "toward" if shap_value > 0 else "away from"
+        factors.append({
+            "feature": FEATURE_LABELS.get(feature, feature),
+            "value": str(raw_values.get(feature)),
+            "importance": round(shap_value, 4),
+            "description": (
+                f"SHAP value {shap_value:+.4f} ({direction} the predicted class) "
+                f"for this request's {FEATURE_LABELS.get(feature, feature)} = {raw_values.get(feature)}."
+            ),
+        })
+    return factors
+
+
+def build_attention_explanation(attention_weights: List[float]) -> List[Dict[str, float]]:
+    """
+    Real, model-grounded explanation for the attention-LSTM (Model B): which
+    events in the input window the trained attention layer weighted most
+    heavily when producing this specific classification. Higher weight = that
+    timestep's connection record contributed more to the final decision.
+    Returned sorted by descending attention weight (most influential first).
+    """
+    window_size = len(attention_weights)
+    explanation = [
+        {
+            "timestep": i,
+            "eventsBeforeMostRecent": float(window_size - 1 - i),
+            "attentionWeight": round(float(weight), 4),
+        }
+        for i, weight in enumerate(attention_weights)
+    ]
+    return sorted(explanation, key=lambda x: x["attentionWeight"], reverse=True)
 
 
 def compute_risk_score(severity: str, confidence: float) -> float:

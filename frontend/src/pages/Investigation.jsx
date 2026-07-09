@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Bot, Ban, PackageCheck, Bell, FileWarning, ShieldCheck, MessageSquare, Circle, AlertTriangle } from 'lucide-react';
-import { SeverityBadge, StatusBadge } from '../components/common/Badge';
+import { SeverityBadge, StatusBadge, ResponseModeBadge, detectResponseMode } from '../components/common/Badge';
 import { Skeleton } from '../components/common/Skeleton';
 import EmptyState from '../components/common/EmptyState';
 import { threatService } from '../services/threatService';
@@ -105,6 +105,7 @@ export default function Investigation() {
                 <div className="pb-6">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-medium text-slate-200">{event.title}</p>
+                    <ResponseModeBadge mode={detectResponseMode(event.description)} />
                     <span className="text-xs text-slate-600 font-mono">{new Date(event.timestamp).toLocaleString()}</span>
                   </div>
                   <p className="text-sm text-slate-400 mt-0.5">{event.description}</p>

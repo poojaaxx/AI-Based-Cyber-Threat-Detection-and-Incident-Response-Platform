@@ -1,21 +1,25 @@
 import { useEffect, useState } from 'react';
-import { RefreshCw, Settings as SettingsIcon, UserCircle2, KeyRound, Bell, Webhook } from 'lucide-react';
+import { RefreshCw, Settings as SettingsIcon, UserCircle2, KeyRound, Bell, Webhook, BrainCircuit } from 'lucide-react';
 import { settingsService } from '../services/settingsService';
 import { useAuth } from '../context/AuthContext';
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const [profile, setProfile] = useState({ fullName: '', department: '', phone: '' });
   const [password, setPassword] = useState({ currentPassword: '', newPassword: '' });
   const [prefs, setPrefs] = useState(null);
   const [apiConfig, setApiConfig] = useState(null);
+  const [adaptiveMode, setAdaptiveMode] = useState(null);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
+
+  const isAdmin = hasRole('ROLE_ADMIN');
 
   useEffect(() => {
     settingsService.getCurrentUser().then(({ data }) => setProfile({ fullName: data.fullName, department: data.department || '', phone: data.phone || '' }));
     settingsService.getNotificationPreferences().then(({ data }) => setPrefs(data));
     settingsService.getApiConfiguration().then(({ data }) => setApiConfig(data)).catch(() => setApiConfig(null));
+    settingsService.getAdaptiveResponseMode().then(({ data }) => setAdaptiveMode(data.enabled)).catch(() => setAdaptiveMode(null));
   }, []);
 
   const flash = (msg, type = 'success') => {
@@ -51,6 +55,18 @@ export default function Settings() {
     const { data } = await settingsService.regenerateApiKey();
     setApiConfig(data);
     flash('API key regenerated.');
+  };
+
+  const handleAdaptiveModeToggle = async () => {
+    const next = !adaptiveMode;
+    setAdaptiveMode(next);
+    try {
+      await settingsService.setAdaptiveResponseMode(next);
+      flash(`Adaptive Response Mode ${next ? 'enabled' : 'disabled'}.`);
+    } catch (err) {
+      setAdaptiveMode(!next);
+      flash(err.response?.data?.message || 'Failed to update Adaptive Response Mode.', 'error');
+    }
   };
 
   return (
@@ -141,6 +157,30 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      {adaptiveMode !== null && (
+        <div className="cg-card space-y-3">
+          <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+            <BrainCircuit size={15} className="text-cg-accent" /> Adaptive Response Mode
+          </h3>
+          <label className="flex items-center justify-between text-sm text-slate-300 py-1">
+            <span>
+              Use the RL-trained Q-learning policy to pick response actions, instead of the static playbook
+              <span className="block text-xs text-slate-500 mt-0.5">
+                Falls back to the static playbook automatically if the AI service is unreachable.
+                {!isAdmin && ' Only an administrator can change this.'}
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              checked={!!adaptiveMode}
+              disabled={!isAdmin}
+              onChange={handleAdaptiveModeToggle}
+              className="accent-cg-accent w-4 h-4 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 shrink-0 ml-4"
+            />
+          </label>
+        </div>
+      )}
     </div>
   );
 }

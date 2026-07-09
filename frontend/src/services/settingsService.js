@@ -8,4 +8,6 @@ export const settingsService = {
   updateNotificationPreferences: (payload) => api.put('/settings/notification-preferences', payload),
   getApiConfiguration: () => api.get('/settings/api-configuration'),
   regenerateApiKey: () => api.post('/settings/api-configuration/regenerate'),
+  getAdaptiveResponseMode: () => api.get('/settings/adaptive-response-mode'),
+  setAdaptiveResponseMode: (enabled) => api.put('/settings/adaptive-response-mode', { enabled }),
 };

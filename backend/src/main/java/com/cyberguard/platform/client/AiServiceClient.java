@@ -1,8 +1,10 @@
 package com.cyberguard.platform.client;
 
+import com.cyberguard.platform.dto.request.PolicyRecommendationRequest;
 import com.cyberguard.platform.dto.request.ThreatDetectionRequest;
 import com.cyberguard.platform.dto.response.AiPredictionResponse;
 import com.cyberguard.platform.dto.response.ContributingFactor;
+import com.cyberguard.platform.dto.response.PolicyRecommendationResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -40,6 +42,23 @@ public class AiServiceClient {
             log.warn("AI service unavailable, using fallback heuristic classification: {}", ex.getMessage());
             return fallbackPrediction(request);
         }
+    }
+
+    /**
+     * Calls the AI service's Q-learning response policy for a recommended
+     * action. Unlike predictThreat()/assistantChat(), this does NOT catch
+     * exceptions internally - ResponseActionService.autoRespondAdaptive()
+     * needs to know the call failed so it can fall back to the static
+     * autoRespond() playbook itself.
+     */
+    public PolicyRecommendationResponse recommendAction(String threatType, String severity, double confidenceScore) {
+        return aiServiceWebClient.post()
+                .uri("/api/v1/policy/recommend-action")
+                .bodyValue(new PolicyRecommendationRequest(threatType, severity, confidenceScore))
+                .retrieve()
+                .bodyToMono(PolicyRecommendationResponse.class)
+                .timeout(Duration.ofSeconds(30))
+                .block();
     }
 
     public String assistantChat(String message, String sessionContext) {

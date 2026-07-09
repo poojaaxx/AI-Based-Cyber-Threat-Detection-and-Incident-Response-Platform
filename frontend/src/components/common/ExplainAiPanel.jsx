@@ -1,6 +1,6 @@
 import {
   Brain, ShieldAlert, Ban, KeyRound, ShieldCheck, Flame, Activity, Search,
-  Unplug, Bell, FileWarning, Sparkles,
+  Unplug, Bell, FileWarning, Sparkles, Microscope,
 } from 'lucide-react';
 
 function riskColor(score) {
@@ -77,6 +77,32 @@ export default function ExplainAiPanel({ explanation }) {
           </div>
         </div>
       </div>
+
+      {explanation.shapExplanation?.length > 0 && (
+        <div className="cg-card space-y-3">
+          <div className="flex items-center gap-2">
+            <Microscope size={18} className="text-cg-accent" />
+            <h3 className="text-base font-semibold text-slate-100">SHAP Explanation (per-instance)</h3>
+          </div>
+          <p className="text-xs text-slate-500">
+            Computed for this specific request via shap.TreeExplainer, so - unlike the model-wide
+            ranking above - both the ranking and magnitudes below are unique to this detection.
+          </p>
+          <div className="space-y-2">
+            {explanation.shapExplanation.map((f) => (
+              <div key={f.feature} className="text-sm">
+                <div className="flex justify-between mb-1">
+                  <span className="text-slate-300">{f.feature}: <span className="font-mono text-slate-400">{f.value}</span></span>
+                  <span className={`text-xs font-mono ${f.importance >= 0 ? 'text-cg-success' : 'text-cg-danger'}`}>
+                    {f.importance >= 0 ? '+' : ''}{f.importance}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">{f.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {explanation.recommendations?.length > 0 && (
         <div className="cg-card space-y-3">

@@ -137,6 +137,7 @@ public class ThreatInvestigationService {
                 .reasoning(threat.getReasoning())
                 .recommendedAction(threat.getRecommendedAction())
                 .contributingFactors(factors)
+                .shapExplanation(deserializeFactors(threat.getShapExplanation()))
                 .mitreTechniques(mitreTechniques)
                 .recommendations(aiRecommendationService.getRecommendations(threat.getThreatType(), threat.getSeverity()))
                 .build();

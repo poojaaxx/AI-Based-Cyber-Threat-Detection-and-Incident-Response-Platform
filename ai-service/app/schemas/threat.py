@@ -32,3 +32,7 @@ class PredictionResponse(BaseModel):
     riskScore: float = 0.0
     reasoning: str = ""
     contributingFactors: List[ContributingFactor] = Field(default_factory=list)
+    # Phase 3 addition: per-instance SHAP explanation (see app/ml/explainability.py
+    # build_shap_factors()). Additive/optional so existing clients that only read
+    # contributingFactors are unaffected.
+    shapExplanation: List[ContributingFactor] = Field(default_factory=list)
