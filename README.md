@@ -1,5 +1,7 @@
 <div align="center">
 
+![Typing SVG](https://readme-typing-svg.demolab.com/?font=Fira+Code&size=22&pause=1000&color=2FD3D3&center=true&vCenter=true&width=600&lines=AI-Powered+Threat+Detection;Automated+Incident+Response;Real-Time+Security+Monitoring)
+
 # 🛡️ CyberGuard
 ### AI-Based Cyber Threat Detection & Incident Response Platform
 
@@ -21,6 +23,8 @@
 [![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?style=flat-square&logo=docker&logoColor=white)](#)
 [![Render](https://img.shields.io/badge/Render-Deployed-46E3B7?style=flat-square&logo=render&logoColor=white)](#)
 [![Vercel](https://img.shields.io/badge/Vercel-Deployed-000000?style=flat-square&logo=vercel&logoColor=white)](#)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.13-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)](#)
+[![SHAP](https://img.shields.io/badge/Explainability-SHAP-8A2BE2?style=flat-square)](#)
 
 <!--
   🎬 Demo video / GIF placeholder.
@@ -37,6 +41,8 @@
 ## 🚀 Live Demo
 
 <div align="center">
+
+![Status](https://img.shields.io/badge/🟢-Live-brightgreen?style=flat-square)
 
 [![Frontend](https://img.shields.io/badge/🌐_Frontend-Live_App-1a73e8?style=for-the-badge)](https://ai-based-cyber-threat-detection-and.vercel.app)
 [![Backend API](https://img.shields.io/badge/⚙️_Backend_API-Swagger_UI-6DB33F?style=for-the-badge)](https://ai-based-cyber-threat-detection-and.onrender.com/swagger-ui.html)
@@ -99,6 +105,14 @@
 
 </details>
 
+<hr>
+
+<div align="right">
+
+[⬆ Back to top](#-cyberguard)
+
+</div>
+
 ---
 
 ## 🏗️ Architecture
@@ -121,6 +135,14 @@ The backend owns all persistence via JPA/MySQL and delegates threat classificati
 replies to the FastAPI microservice over REST, with a graceful heuristic fallback if that service
 is temporarily unreachable.
 
+<hr>
+
+<div align="right">
+
+[⬆ Back to top](#-cyberguard)
+
+</div>
+
 ---
 
 ## 🧰 Tech Stack
@@ -134,6 +156,14 @@ is temporarily unreachable.
 | **Authentication** | Spring Security + JWT (access + refresh tokens), BCrypt password hashing |
 | **Deployment** | Docker (all three services), Vercel (frontend), Render (backend + AI service) |
 | **Containerization** | Multi-stage Dockerfiles per service + Docker Compose for local parity |
+
+<hr>
+
+<div align="right">
+
+[⬆ Back to top](#-cyberguard)
+
+</div>
 
 ---
 
@@ -159,6 +189,14 @@ is temporarily unreachable.
 
 #### AI Assistant
 ![AI Assistant](docs/screenshots/ai-assistant.png)
+
+<hr>
+
+<div align="right">
+
+[⬆ Back to top](#-cyberguard)
+
+</div>
 
 ---
 
@@ -227,6 +265,14 @@ Spins up MySQL (schema + seed auto-loaded), the AI service, the backend, and an
 Nginx-served frontend build — all wired together with the same environment variable
 contracts used in production.
 
+<hr>
+
+<div align="right">
+
+[⬆ Back to top](#-cyberguard)
+
+</div>
+
 ---
 
 ## 🔑 Environment Variables
@@ -266,6 +312,14 @@ VITE_API_BASE_URL=http://localhost:8080/api/v1
 CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:8080
 CONFIDENCE_THRESHOLD=0.35
 ```
+
+<hr>
+
+<div align="right">
+
+[⬆ Back to top](#-cyberguard)
+
+</div>
 
 ---
 
@@ -365,6 +419,14 @@ All backend routes are prefixed `/api/v1` and (except `/auth/**`) require an
 See [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) for the complete endpoint reference,
 including Threat Intelligence, Monitoring, Notifications, Audit Logs, Users, and Settings.
 
+<hr>
+
+<div align="right">
+
+[⬆ Back to top](#-cyberguard)
+
+</div>
+
 ---
 
 ## ☁️ Deployment
@@ -377,6 +439,14 @@ including Threat Intelligence, Monitoring, Notifications, Audit Logs, Users, and
 | Database | **Aiven MySQL** (managed) |
 
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full deployment guide.
+
+<hr>
+
+<div align="right">
+
+[⬆ Back to top](#-cyberguard)
+
+</div>
 
 ---
 
@@ -391,6 +461,14 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full deployment guide.
 - 🔔 Real-time notifications via Server-Sent Events
 - 🧯 Graceful degradation — AI classification falls back to a heuristic if the AI service is ever unreachable
 
+<hr>
+
+<div align="right">
+
+[⬆ Back to top](#-cyberguard)
+
+</div>
+
 ---
 
 ## 🔮 Future Enhancements
@@ -403,6 +481,14 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full deployment guide.
 - [ ] Dark/light theme toggle and full WCAG AA accessibility audit
 - [ ] Kubernetes deployment manifests for horizontal scaling
 
+<hr>
+
+<div align="right">
+
+[⬆ Back to top](#-cyberguard)
+
+</div>
+
 ---
 
 ## 📄 License
@@ -410,11 +496,27 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full deployment guide.
 This project is released under the **MIT License** — free to use, modify, and distribute
 for educational and commercial purposes.
 
+<hr>
+
+<div align="right">
+
+[⬆ Back to top](#-cyberguard)
+
+</div>
+
 ---
 
 <div align="center">
 
 Built as a final-year engineering capstone project.
+
+[⬆ Back to top](#-cyberguard)
+
+</div>
+
+<hr>
+
+<div align="center">
 
 [⬆ Back to top](#-cyberguard)
 
