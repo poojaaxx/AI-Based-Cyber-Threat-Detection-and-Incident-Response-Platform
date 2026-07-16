@@ -1,14 +1,18 @@
 FROM python:3.11-slim
 WORKDIR /app
 
-# Build context is the repo root (deployment/render.yaml), not ai-service/,
-# so that the NSL-KDD dataset below can be included - see the COPY dataset
-# line and app/ml/kdd_pipeline.py's RAW_DATA_DIR comment for why /dataset.
-COPY ai-service/requirements.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY ai-service/app ./app
+COPY app ./app
 
+# The NSL-KDD dataset is duplicated here (ai-service/dataset/) rather than
+# read from the repo-root dataset/ folder, because this image's Docker build
+# context is scoped to ai-service/ (deployment/render.yaml) and Render does
+# not reliably re-sync an existing service's context/root-directory setting
+# from render.yaml on push - keeping everything the build needs inside
+# ai-service/ avoids depending on that.
+#
 # kdd_pipeline.py resolves NSL-KDD's location as
 # Path(__file__).resolve().parents[3] / "dataset". With this image's layout
 # (WORKDIR /app, app copied to ./app), that file lives at
