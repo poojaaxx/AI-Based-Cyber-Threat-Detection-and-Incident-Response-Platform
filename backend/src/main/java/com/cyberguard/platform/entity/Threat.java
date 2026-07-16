@@ -1,5 +1,6 @@
 package com.cyberguard.platform.entity;
 
+import com.cyberguard.platform.entity.enums.CrossModelAgreement;
 import com.cyberguard.platform.entity.enums.Severity;
 import com.cyberguard.platform.entity.enums.ThreatStatus;
 import com.cyberguard.platform.entity.enums.ThreatType;
@@ -85,6 +86,19 @@ public class Threat {
     @Lob
     @Column(name = "shap_explanation", columnDefinition = "TEXT")
     private String shapExplanation;
+
+    /** Model B's (attention-LSTM temporal detector) classification of this same event,
+     * translated from Model A's request fields into an approximate NSL-KDD-shaped
+     * record - see ThreatService.deriveKddRecord(). Null if Model B was unavailable. */
+    @Column(name = "temporal_category", length = 20)
+    private String temporalCategory;
+
+    /** Whether Model A and Model B agreed on malicious-vs-benign for this event.
+     * See ThreatService.runCrossModelCheck(). Null for threats detected before this
+     * cross-model check existed. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "cross_model_agreement")
+    private CrossModelAgreement crossModelAgreement;
 
     @Column(name = "detected_at", nullable = false)
     private LocalDateTime detectedAt;

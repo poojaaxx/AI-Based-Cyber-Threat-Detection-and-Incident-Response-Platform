@@ -143,7 +143,12 @@ export default function ThreatDetail() {
           <Info label="Source" value={`${threat.sourceIp || '-'}:${threat.sourcePort || '-'}`} />
           <Info label="Destination" value={`${threat.destinationIp || '-'}:${threat.destinationPort || '-'}`} />
           <Info label="Detected At" value={new Date(threat.detectedAt).toLocaleString()} />
-          <Info label="Detection Model" value="RandomForest (Model A)" hint="The live detection pipeline always uses the RandomForest classifier today; the experimental attention-LSTM temporal detector (Model B) is available via a separate endpoint but isn't yet wired into this flow." />
+          <Info label="Detection Model" value="RandomForest (Model A)" hint="Primary classifier; runs on every detection." />
+          <Info
+            label="Cross-Model Check (Model B)"
+            value={crossModelLabel(threat)}
+            hint="Model A's request fields are approximately translated into an NSL-KDD-shaped record and classified by the attention-LSTM temporal detector (Model B). Severity is escalated when both models agree it's malicious; disagreement is flagged for review, not auto-escalated."
+          />
         </div>
 
         <div>
@@ -215,6 +220,19 @@ export default function ThreatDetail() {
       <ExplainAiPanel explanation={explanation} />
     </div>
   );
+}
+
+function crossModelLabel(threat) {
+  switch (threat.crossModelAgreement) {
+    case 'AGREE':
+      return `Agrees (${threat.temporalCategory}) - escalated`;
+    case 'DISAGREE':
+      return `Disagrees (${threat.temporalCategory}) - flagged for review`;
+    case 'UNAVAILABLE':
+      return 'Unavailable';
+    default:
+      return 'N/A';
+  }
 }
 
 function Info({ label, value, hint }) {
