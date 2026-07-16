@@ -36,7 +36,10 @@ services:
     name: cyberguard-ai-service
     runtime: docker
     dockerfilePath: ai-service/Dockerfile
-    dockerContext: ai-service
+    # Repo root, not ai-service/ - the image needs the repo-root dataset/
+    # folder (NSL-KDD) alongside ai-service/ itself. See .dockerignore at the
+    # repo root and ai-service/Dockerfile's COPY dataset comment.
+    dockerContext: .
     plan: free
     healthCheckPath: /health
     envVars:

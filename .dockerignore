@@ -1,0 +1,13 @@
+# Only applies to Docker builds whose context is the repo root - currently
+# just the ai-service image (deployment/render.yaml), which needs the
+# repo-root dataset/ folder alongside ai-service/ but nothing else. The
+# backend image uses its own context (backend/) and is unaffected by this file.
+backend/
+frontend/
+database/
+.git/
+.github/
+ai-service/venv/
+ai-service/app/data/
+**/__pycache__/
+**/*.pyc
