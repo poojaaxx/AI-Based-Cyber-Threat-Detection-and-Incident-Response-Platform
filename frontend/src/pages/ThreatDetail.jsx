@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Ban, PackageCheck, Search, Sparkles } from 'lucide-react';
 import { SeverityBadge, StatusBadge } from '../components/common/Badge';
 import ExplainAiPanel from '../components/common/ExplainAiPanel';
+import ShapWaterfallChart from '../components/common/ShapWaterfallChart';
 import { Skeleton } from '../components/common/Skeleton';
 import { threatService } from '../services/threatService';
 import { responseActionService } from '../services/responseActionService';
@@ -211,6 +212,20 @@ export default function ThreatDetail() {
                 </div>
               ))}
             </div>
+
+            {temporalResult.shapExplanation?.length > 0 && (
+              <div className="pt-2 border-t border-cg-border">
+                <p className="text-xs text-slate-400 uppercase mb-2">SHAP Explanation (per-instance)</p>
+                <ShapWaterfallChart
+                  baseValue={temporalResult.shapBaseValue}
+                  factors={temporalResult.shapExplanation}
+                  otherContribution={temporalResult.shapOtherContribution}
+                  otherFeatureCount={temporalResult.shapOtherFeatureCount}
+                  finalValue={temporalResult.confidenceScore}
+                />
+              </div>
+            )}
+
             <p className="text-xs text-slate-500 pt-1 border-t border-cg-border">{temporalResult.note}</p>
           </div>
         )}

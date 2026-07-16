@@ -163,6 +163,10 @@ def build_and_save() -> dict:
             "label_encoder": label_encoder,
             "window": WINDOW,
             "label_categories": LABEL_CATEGORIES,
+            # Per-feature mean of the SCALED training data - used as the "feature
+            # masked out" baseline for Model B's SHAP explanations (see
+            # lstm_model_loader.py's _shap_factors()).
+            "feature_mean": X_train_scaled.mean(axis=0),
         },
         KDD_PROCESSED_DIR / "preprocessing.joblib",
     )

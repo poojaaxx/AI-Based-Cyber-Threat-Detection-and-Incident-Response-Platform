@@ -10,6 +10,8 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
+from app.schemas.threat import ContributingFactor
+
 
 class KddConnectionRecord(BaseModel):
     """One NSL-KDD-style connection record. Field names/defaults mirror the
@@ -78,3 +80,13 @@ class TemporalPredictionResponse(BaseModel):
         "interchangeable."
     )
     attentionExplanation: Optional[List[Dict[str, float]]] = None
+    # Per-instance SHAP explanation via shap.KernelExplainer (see
+    # lstm_model_loader.py's _shap_factors()). Additive/optional - empty list
+    # if the deployment predates this or the SHAP computation itself failed.
+    shapExplanation: List[ContributingFactor] = Field(default_factory=list)
+    # baseValue + shapExplanation + otherContribution == the predicted class's
+    # probability (confidenceScore) - lets a frontend waterfall chart show a
+    # mathematically honest running total instead of just the top factors.
+    shapBaseValue: float = 0.0
+    shapOtherContribution: float = 0.0
+    shapOtherFeatureCount: int = 0

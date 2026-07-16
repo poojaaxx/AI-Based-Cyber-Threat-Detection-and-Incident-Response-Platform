@@ -136,6 +136,43 @@ def build_shap_factors(
     return factors
 
 
+def build_temporal_shap_factors(
+    shap_values_row: "Any", feature_names: List[str], raw_values: Dict[str, Any], top_n: int = 5
+) -> List[Dict[str, Any]]:
+    """
+    Per-instance SHAP contributing factors for the attention-LSTM (Model B),
+    computed via shap.KernelExplainer - see lstm_model_loader.py's
+    _shap_factors() for why KernelExplainer rather than DeepExplainer/
+    GradientExplainer (empirically, DeepExplainer doesn't support nn.LSTM at
+    all, and GradientExplainer's additivity was off by ~15-20% of the logit
+    range on this model; KernelExplainer's masking-based approach was
+    verified to be additive to within floating-point precision).
+
+    Each of the window's raw NSL-KDD features is treated as one Shapley
+    "player" masked uniformly across all 10 timesteps at once, so this ranks
+    the whole window's contribution per feature - not a separate breakdown
+    per timestep. feature_names/raw_values use the dataset's raw column
+    names (e.g. "dst_host_srv_serror_rate"), prettified for display below.
+    """
+    ranked = sorted(zip(feature_names, shap_values_row), key=lambda x: abs(x[1]), reverse=True)
+    factors = []
+    for feature, shap_value in ranked[:top_n]:
+        shap_value = float(shap_value)
+        direction = "toward" if shap_value > 0 else "away from"
+        label = feature.replace("_", " ").title()
+        value = raw_values.get(feature)
+        factors.append({
+            "feature": label,
+            "value": str(value),
+            "importance": round(shap_value, 4),
+            "description": (
+                f"SHAP value {shap_value:+.4f} ({direction} the predicted class) "
+                f"for this window's most recent {label} = {value}."
+            ),
+        })
+    return factors
+
+
 def build_attention_explanation(attention_weights: List[float]) -> List[Dict[str, float]]:
     """
     Real, model-grounded explanation for the attention-LSTM (Model B): which

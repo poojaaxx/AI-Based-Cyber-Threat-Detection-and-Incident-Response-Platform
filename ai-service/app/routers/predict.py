@@ -37,4 +37,8 @@ def predict_temporal(request: TemporalPredictionRequest) -> TemporalPredictionRe
         classProbabilities={k: round(v, 4) for k, v in result["class_probabilities"].items()},
         attentionWeights=[round(w, 4) for w in result["attention_weights"]],
         attentionExplanation=build_attention_explanation(result["attention_weights"]),
+        shapExplanation=result["shap_factors"],
+        shapBaseValue=round(result["shap_base_value"], 4),
+        shapOtherContribution=round(result["shap_other_contribution"], 4),
+        shapOtherFeatureCount=result["shap_other_feature_count"],
     )

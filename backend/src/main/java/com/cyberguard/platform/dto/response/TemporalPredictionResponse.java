@@ -27,4 +27,12 @@ public class TemporalPredictionResponse {
     private String modelVersion;
     private String note;
     private List<Map<String, Double>> attentionExplanation;
+    /** Per-instance SHAP explanation via the ai-service's shap.KernelExplainer
+     * (see lstm_model_loader.py's _shap_factors()). Additive/optional. */
+    private List<ContributingFactor> shapExplanation;
+    /** shapBaseValue + shapExplanation + shapOtherContribution == confidenceScore -
+     * lets the frontend waterfall chart show a mathematically honest running total. */
+    private Double shapBaseValue;
+    private Double shapOtherContribution;
+    private Integer shapOtherFeatureCount;
 }
