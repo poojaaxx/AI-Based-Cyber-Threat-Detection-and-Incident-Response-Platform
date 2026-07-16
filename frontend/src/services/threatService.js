@@ -8,4 +8,5 @@ export const threatService = {
   detect: (payload) => api.post('/threats/detect', payload),
   explain: (id) => api.get(`/threats/${id}/explain`),
   investigate: (id) => api.get(`/threats/${id}/investigation`),
+  predictTemporal: (records) => api.post('/threats/predict-temporal', { records }),
 };

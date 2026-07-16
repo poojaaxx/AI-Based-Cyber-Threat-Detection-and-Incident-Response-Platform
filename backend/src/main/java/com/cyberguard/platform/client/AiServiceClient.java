@@ -5,6 +5,7 @@ import com.cyberguard.platform.dto.request.ThreatDetectionRequest;
 import com.cyberguard.platform.dto.response.AiPredictionResponse;
 import com.cyberguard.platform.dto.response.ContributingFactor;
 import com.cyberguard.platform.dto.response.PolicyRecommendationResponse;
+import com.cyberguard.platform.dto.response.TemporalPredictionResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -57,6 +58,23 @@ public class AiServiceClient {
                 .bodyValue(new PolicyRecommendationRequest(threatType, severity, confidenceScore))
                 .retrieve()
                 .bodyToMono(PolicyRecommendationResponse.class)
+                .timeout(Duration.ofSeconds(30))
+                .block();
+    }
+
+    /**
+     * Calls the AI service's attention-LSTM temporal detector ("Model B",
+     * trained on NSL-KDD) for a demo/comparison prediction. Like
+     * recommendAction(), this does NOT catch exceptions internally - there is
+     * no meaningful heuristic fallback for a sequence classifier, so the
+     * caller (ThreatController) surfaces a 503 instead of a fabricated result.
+     */
+    public TemporalPredictionResponse predictTemporal(List<Map<String, Object>> records) {
+        return aiServiceWebClient.post()
+                .uri("/api/v1/predict/temporal")
+                .bodyValue(Map.of("records", records))
+                .retrieve()
+                .bodyToMono(TemporalPredictionResponse.class)
                 .timeout(Duration.ofSeconds(30))
                 .block();
     }
