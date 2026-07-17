@@ -9,6 +9,13 @@ spring:
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      # HikariCP's own default (10) reserves memory for connections this app
+      # rarely needs concurrently, and Render's free-tier 512MB instance has
+      # very little room to spare - see Dockerfile's JAVA_OPTS comment for the
+      # matching JVM-side memory tuning (both address the same OOM/exit-137 issue).
+      maximum-pool-size: ${DB_POOL_MAX:5}
+      minimum-idle: ${DB_POOL_MIN:2}
   jpa:
     hibernate:
       ddl-auto: ${DDL_AUTO:update}
