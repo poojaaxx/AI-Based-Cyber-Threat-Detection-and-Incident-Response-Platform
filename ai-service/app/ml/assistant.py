@@ -1,7 +1,13 @@
+import logging
 import re
 
+from groq import Groq, GroqError
+
+from app.config import GROQ_API_KEY
 from app.ml.constants import RECOMMENDED_ACTIONS
 from app.ml.knowledge_base import find_general_topic_match, find_threat_match
+
+logger = logging.getLogger(__name__)
 
 CVE_PATTERN = re.compile(r"CVE-\d{4}-\d{4,7}", re.IGNORECASE)
 
@@ -12,17 +18,84 @@ HELP_TEXT = (
     "- Explaining cyber threats (malware, DDoS, SQL injection, XSS, brute force, port scan, phishing, ransomware, insider threats)\n"
     "- Explaining CVEs (e.g. \"explain CVE-2021-44228\")\n"
     "- Recommending mitigations for a given threat\n"
-    "- General cybersecurity concepts (CVSS, MITRE ATT&CK, MFA, firewalls, incident response)\n\n"
+    "- General cybersecurity concepts (CVSS, MITRE ATT&CK, MFA, firewalls, incident response)\n"
+    "- Pretty much any other question you ask\n\n"
     "Try asking: \"What is ransomware?\" or \"How do I mitigate a brute force attack?\""
 )
 
+SYSTEM_PROMPT = (
+    "You are the CyberGuard AI Security Assistant, embedded in an AI-based cyber threat "
+    "detection and incident response platform. Users are analysts and engineers using the "
+    "platform. You explain cyber threats (malware, DDoS, SQL injection, XSS, brute force, "
+    "port scanning, phishing, ransomware, insider threats), CVEs, MITRE ATT&CK techniques, "
+    "and general cybersecurity concepts, and recommend mitigations. You can also answer "
+    "general questions outside cybersecurity. Keep answers concise and practical. If asked "
+    "about a specific CVE, note you may not have live NVD data and point the user to the "
+    "platform's Threat Intelligence page for authoritative CVSS scores and MITRE ATT&CK "
+    "mappings."
+)
 
-def generate_reply(message: str) -> str:
+_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
+
+
+def _parse_context(context: str | None, current_message: str) -> list[dict]:
+    """Turns the backend's "SENDER: text" transcript into a Messages API history.
+
+    The backend saves the user's message before building context, so the last
+    line is always a duplicate of current_message - drop it here.
+    """
+    if not context:
+        return []
+
+    turns = []
+    for line in context.strip().splitlines():
+        if ": " not in line:
+            continue
+        sender, text = line.split(": ", 1)
+        role = "assistant" if sender.strip().upper() == "ASSISTANT" else "user"
+        turns.append({"role": role, "content": text})
+
+    if turns and turns[-1]["role"] == "user" and turns[-1]["content"] == current_message:
+        turns.pop()
+    while turns and turns[0]["role"] == "assistant":
+        turns.pop(0)
+    return turns
+
+
+def _call_groq(message: str, context: str | None) -> str:
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages.extend(_parse_context(context, message))
+    messages.append({"role": "user", "content": message})
+
+    response = _client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        max_tokens=1024,
+        messages=messages,
+    )
+    reply = response.choices[0].message.content
+    return reply if reply else _offline_reply(message)
+
+
+def generate_reply(message: str, context: str | None = None) -> str:
     text = message.strip()
-    lower = text.lower()
-
     if not text:
         return HELP_TEXT
+
+    if _client is None:
+        logger.warning("GROQ_API_KEY not configured; using offline fallback responder.")
+        return _offline_reply(text)
+
+    try:
+        return _call_groq(text, context)
+    except GroqError as exc:
+        logger.error("Groq API call failed, falling back to offline responder: %s", exc)
+        return _offline_reply(text)
+
+
+def _offline_reply(message: str) -> str:
+    """Keyword/rule-based responder used when the Groq API is unavailable."""
+    text = message.strip()
+    lower = text.lower()
 
     if lower in GREETINGS or lower.startswith(tuple(GREETINGS)):
         return "Hello! I'm your AI Security Assistant. " + HELP_TEXT
@@ -61,8 +134,6 @@ def generate_reply(message: str) -> str:
         )
 
     return (
-        "I don't have a specific answer for that yet, but I can help explain any of the nine detected threat "
-        "categories (malware, DDoS, SQL injection, XSS, brute force, port scan, phishing, ransomware, insider threat), "
-        "CVEs, MITRE ATT&CK techniques, or general cybersecurity concepts. Could you rephrase your question or ask "
-        "about one of those topics?"
+        "The AI assistant service is currently unavailable. Please try again shortly, or consult the "
+        "Threat Intelligence page for CVE and MITRE ATT&CK details."
     )

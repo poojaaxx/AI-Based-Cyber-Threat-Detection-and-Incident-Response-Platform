@@ -9,6 +9,7 @@ pandas==2.2.2
 numpy==2.4.6
 joblib==1.4.2
 python-dotenv==1.0.1
+groq==0.31.1
 httpx==0.27.0
 pyarrow==24.0.0
 # CPU-only wheel, explicitly - plain "torch==2.13.0" from the default PyPI index

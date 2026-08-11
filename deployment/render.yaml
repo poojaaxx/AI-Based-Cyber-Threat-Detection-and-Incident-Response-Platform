@@ -42,3 +42,5 @@ services:
     envVars:
       - key: CORS_ALLOWED_ORIGINS
         sync: false
+      - key: GROQ_API_KEY
+        sync: false
