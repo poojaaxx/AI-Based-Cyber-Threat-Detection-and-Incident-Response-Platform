@@ -90,18 +90,24 @@
 1. **Authentication** — JWT access/refresh tokens, RBAC (Admin / Security Analyst / User)
 2. **Dashboard** — security score, active threats, statistics, trends, recent activity
 3. **Real-Time Monitoring** — system logs, login attempts, network events
-4. **AI Threat Detection** — 9-class RandomForest classifier (malware, DDoS, SQL injection,
-   XSS, brute force, port scan, phishing, ransomware, insider threat)
-5. **Threat Classification** — Low / Medium / High / Critical severity
-6. **Threat Intelligence** — CVE database, IOC feed, MITRE ATT&CK mapping
-7. **Automated Incident Response** — block IP, disable user, quarantine threat, notify admin
-8. **AI Security Assistant** — chat-based threat/CVE explanations and mitigation guidance
-9. **Incident Management** — create, assign, update, resolve, timeline, comments
-10. **Reports** — PDF, CSV, Excel export
-11. **Notifications** — dashboard + email alerts for critical threats
-12. **Visual Analytics** — line/pie/bar charts, threat & incident trends
-13. **Audit Logs** — full action trail
-14. **Settings** — profile, password, notification preferences, API configuration
+4. **AI Threat Detection (Model A)** — 9-class RandomForest classifier on synthetic event
+   features (malware, DDoS, SQL injection, XSS, brute force, port scan, phishing, ransomware,
+   insider threat)
+5. **Temporal Threat Detection (Model B)** — attention-LSTM sequence model trained on the real
+   **NSL-KDD** intrusion-detection dataset, with SHAP waterfall explainability per prediction
+6. **Threat Classification** — Low / Medium / High / Critical severity
+7. **Threat Intelligence** — CVE database, IOC feed, MITRE ATT&CK mapping
+8. **Automated Incident Response** — tabular Q-learning agent selects a proportionate response
+   action (block IP, disable user, quarantine, notify, escalate) for each detected threat
+9. **AI Security Assistant** — Groq-backed (Llama 3.3 70B) conversational chat with real
+   session memory, answering both platform-specific and general questions; falls back to an
+   offline keyword-matcher if the Groq API is unreachable
+10. **Incident Management** — create, assign, update, resolve, timeline, comments
+11. **Reports** — PDF, CSV, Excel export
+12. **Notifications** — dashboard + email alerts for critical threats
+13. **Visual Analytics** — line/pie/bar charts, threat & incident trends
+14. **Audit Logs** — full action trail
+15. **Settings** — profile, password, notification preferences, API configuration
 
 </details>
 
@@ -151,7 +157,9 @@ is temporarily unreachable.
 |---|---|
 | **Frontend** | React 18 (Vite), React Router, Axios, Tailwind CSS, Recharts |
 | **Backend** | Spring Boot 3.2.5, Spring Web, Spring Data JPA, Maven |
-| **AI Service** | Python 3.11, FastAPI, scikit-learn, Pandas, NumPy |
+| **AI Service** | Python 3.11, FastAPI, scikit-learn, PyTorch (attention-LSTM), SHAP, Pandas, NumPy |
+| **AI Assistant LLM** | Groq API (Llama 3.3 70B), offline keyword-matcher fallback |
+| **Datasets** | Synthetic event features (Model A), real **NSL-KDD** intrusion dataset (Model B) |
 | **Database** | MySQL 8 (Aiven managed, in production) |
 | **Authentication** | Spring Security + JWT (access + refresh tokens), BCrypt password hashing |
 | **Deployment** | Docker (all three services), Vercel (frontend), Render (backend + AI service) |
@@ -228,11 +236,18 @@ cd ai-service
 python -m venv venv
 source venv/bin/activate        # venv\Scripts\activate on Windows
 pip install -r requirements.txt
-python -m app.ml.train_model     # trains and saves the RandomForest model (~10s)
+cp .env.example .env             # add your GROQ_API_KEY (free at console.groq.com)
+python -m app.ml.train_model     # Model A: RandomForest on synthetic features (~10s)
+python -m app.ml.train_lstm      # Model B: attention-LSTM on NSL-KDD (requires dataset/KDDTrain.parquet + KDDTest.parquet)
+python -m app.ml.response_policy # trains the Q-learning response-selection agent
 uvicorn app.main:app --reload --port 8000
 ```
 
 Verify: http://localhost:8000/health · interactive docs at http://localhost:8000/docs
+
+> The AI Security Assistant works without `GROQ_API_KEY` set — it just falls back to the
+> offline keyword-matcher instead of calling the LLM. Get a free key (no credit card required)
+> at [console.groq.com](https://console.groq.com).
 
 ### 3️⃣ Backend (Spring Boot)
 
@@ -311,6 +326,7 @@ VITE_API_BASE_URL=http://localhost:8080/api/v1
 ```env
 CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:8080
 CONFIDENCE_THRESHOLD=0.35
+GROQ_API_KEY=
 ```
 
 <hr>
@@ -410,8 +426,9 @@ All backend routes are prefixed `/api/v1` and (except `/auth/**`) require an
 
 | Method | Path | Description |
 |---|---|---|
-| POST | `/api/v1/predict` | Classify network/event features into one of 9 threat types + severity + confidence + recommended action |
-| POST | `/api/v1/assistant/chat` | Rule-based cybersecurity knowledge assistant |
+| POST | `/api/v1/predict` | Model A: classify event features into one of 9 threat types + severity + confidence + recommended action |
+| POST | `/api/v1/predict/temporal` | Model B: attention-LSTM sequence classification (NSL-KDD schema) with SHAP explainability |
+| POST | `/api/v1/assistant/chat` | Groq-backed (Llama 3.3) cybersecurity assistant, with offline keyword-matcher fallback |
 | GET | `/health` | Liveness check |
 
 </details>
@@ -453,13 +470,18 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full deployment guide.
 ## 🌟 Project Highlights
 
 - 🏛️ Full-stack, three-service architecture (React · Spring Boot · FastAPI)
-- 🤖 Real AI/ML integration — a trained scikit-learn classifier, not a mocked response
+- 🤖 Real AI/ML integration — two independently trained models, not a mocked response:
+  a scikit-learn RandomForest (Model A) and a PyTorch attention-LSTM trained on the real
+  **NSL-KDD** dataset (Model B), with SHAP explainability on every Model B prediction
+- 🧮 A genuinely-trained tabular Q-learning agent selects proportionate incident-response actions
+- 💬 Real LLM-backed AI Assistant (Groq / Llama 3.3 70B) with conversation memory, not keyword matching
 - 🔐 JWT-based authentication with refresh-token rotation and RBAC
 - 🐳 Dockerized services with dedicated multi-stage Dockerfiles
 - ☁️ Actually deployed to production (Vercel + Render + Aiven), not just "deployable"
 - 🔌 Clean REST API design, documented via OpenAPI/Swagger
 - 🔔 Real-time notifications via Server-Sent Events
-- 🧯 Graceful degradation — AI classification falls back to a heuristic if the AI service is ever unreachable
+- 🧯 Graceful degradation — AI classification falls back to a heuristic, and the AI Assistant
+  falls back to an offline keyword-matcher, if the underlying service is ever unreachable
 
 <hr>
 
@@ -476,7 +498,7 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full deployment guide.
 - [ ] Real-world network telemetry ingestion (e.g. NetFlow/Zeek) instead of manually submitted event features
 - [ ] WebSocket-based collaborative incident war-rooms
 - [ ] Multi-tenant organization support
-- [ ] Deep-learning threat classifier (LSTM/Transformer) alongside the current RandomForest model
+- [ ] Replace NSL-KDD's synthetic row-windowing with true timestamped/session-grouped flow data for genuine temporal fidelity
 - [ ] SOAR-style playbook automation for incident response
 - [ ] Dark/light theme toggle and full WCAG AA accessibility audit
 - [ ] Kubernetes deployment manifests for horizontal scaling
