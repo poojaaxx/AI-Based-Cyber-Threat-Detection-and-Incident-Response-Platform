@@ -1,7 +1,7 @@
 import api, { API_BASE_URL } from './api';
 
 // One authenticated stream for the app. Timers only detect transport failure; they never generate events.
-export function connectEventStream({ onNotification, onDashboardUpdate, onSecurityEvent, onConnectionChange }) {
+export function connectEventStream({ onNotification, onDashboardUpdate, onSecurityEvent, onCollectorStatus, onConnectionChange }) {
   let stopped = false;
   let controller;
   let retryTimer;
@@ -27,6 +27,7 @@ export function connectEventStream({ onNotification, onDashboardUpdate, onSecuri
     } else if (name === 'notification') onNotification?.(payload);
     else if (name === 'dashboard-update') onDashboardUpdate?.(payload);
     else if (name === 'security-event') onSecurityEvent?.(payload);
+    else if (name === 'collector-status') onCollectorStatus?.(payload);
   };
   const open = async () => {
     if (stopped) return;

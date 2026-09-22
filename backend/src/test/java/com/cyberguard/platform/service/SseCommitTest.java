@@ -5,6 +5,33 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import static org.junit.jupiter.api.Assertions.*;
 
 class SseCommitTest {
+    @Test void networkAndCollectorFramesWaitForCommitAndAreDiscardedOnRollback() {
+        var frames = new java.util.ArrayList<String>();
+        SseHubService hub = new SseHubService() {
+            @Override protected org.springframework.web.servlet.mvc.method.annotation.SseEmitter createEmitter() {
+                return new org.springframework.web.servlet.mvc.method.annotation.SseEmitter() {
+                    @Override public void send(SseEventBuilder builder) {
+                        frames.add(builder.build().stream().map(part -> String.valueOf(part.getData()))
+                                .collect(java.util.stream.Collectors.joining()));
+                    }
+                };
+            }
+        };
+        hub.subscribe(2L, true); frames.clear();
+        for (boolean commit : new boolean[]{false, true}) {
+            TransactionSynchronizationManager.initSynchronization();
+            TransactionSynchronizationManager.setActualTransactionActive(true);
+            try {
+                hub.publishSecurityEvent(com.cyberguard.platform.entity.SecurityEvent.builder().source("NETWORK").build());
+                hub.publishCollectorStatus(new com.cyberguard.platform.entity.CollectorState());
+                assertTrue(frames.isEmpty(), "No frame may be sent before commit");
+                var callbacks = TransactionSynchronizationManager.getSynchronizations();
+                if (commit) callbacks.forEach(c -> c.afterCommit());
+                else callbacks.forEach(c -> c.afterCompletion(1));
+                assertEquals(commit ? 2 : 0, frames.size());
+            } finally { TransactionSynchronizationManager.clear(); }
+        }
+    }
     @Test void monitoringFramesOnlyReachAuthorizedSubscribersAndReconnectReceivesNewFrames() throws Exception {
         var frames = new java.util.ArrayList<java.util.List<String>>();
         SseHubService hub = new SseHubService() {
@@ -21,7 +48,10 @@ class SseCommitTest {
         hub.subscribe(1L, false);
         hub.subscribe(2L, true);
         hub.publishSecurityEvent(com.cyberguard.platform.entity.SecurityEvent.builder().id(1L).build());
+        hub.publishCollectorStatus(new com.cyberguard.platform.entity.CollectorState());
         assertTrue(frames.get(0).stream().noneMatch(s -> s.contains("security-event")));
+        assertTrue(frames.get(0).stream().noneMatch(s -> s.contains("collector-status")));
+        assertTrue(frames.get(1).stream().anyMatch(s -> s.contains("collector-status")));
         assertTrue(frames.get(1).stream().anyMatch(s -> s.contains("security-event")));
         hub.subscribe(2L, true);
         hub.heartbeat();

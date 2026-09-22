@@ -26,10 +26,18 @@ public class MonitoringController {
     private final MonitoringService monitoringService;
     private final com.cyberguard.platform.repository.SecurityEventRepository securityEvents;
 
+    private final com.cyberguard.platform.service.NetworkCollectorService networkCollector;
+
+    @GetMapping("/collector-status")
+    public Object collectorStatus() { return networkCollector.health(); }
+
     @GetMapping("/security-events")
     public ResponseEntity<Page<com.cyberguard.platform.entity.SecurityEvent>> getSecurityEvents(
-            @PageableDefault(size = 50) Pageable pageable) {
-        return ResponseEntity.ok(securityEvents.findAllByOrderByIdDesc(pageable));
+            @PageableDefault(size = 50) Pageable pageable, @RequestParam(required = false) String source) {
+        if (source != null && !java.util.Set.of("NETWORK", "CYBERGUARD_AUTH").contains(source))
+            throw new com.cyberguard.platform.exception.BadRequestException("Unknown event source");
+        return ResponseEntity.ok(source == null ? securityEvents.findAllByOrderByIdDesc(pageable)
+                : securityEvents.findBySourceOrderByIdDesc(source, pageable));
     }
 
     @GetMapping("/system-logs")

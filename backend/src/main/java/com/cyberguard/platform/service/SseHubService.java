@@ -74,6 +74,10 @@ public class SseHubService {
         afterCommit(() -> sendTo(List.copyOf(monitoringEmitters), "security-event", event));
     }
 
+    public void publishCollectorStatus(com.cyberguard.platform.entity.CollectorState state) {
+        afterCommit(() -> sendTo(List.copyOf(monitoringEmitters), "collector-status", state));
+    }
+
     @org.springframework.scheduling.annotation.Scheduled(fixedDelay = 15000)
     public void heartbeat() {
         userEmitters.values().forEach(emitters -> sendTo(emitters, "heartbeat", Instant.now().toString()));

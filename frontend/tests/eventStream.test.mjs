@@ -10,7 +10,7 @@ test('SSE parses split CRLF frames, reconnects, detects stale streams, and clean
   const originals = Object.fromEntries(['fetch', 'localStorage', 'window', 'CustomEvent', 'setTimeout', 'clearTimeout'].map(k => [k, globalThis[k]]));
   const timers = new Map();
   let nextId = 0;
-  const states = [], events = [], connected = [];
+  const states = [], events = [], connected = [], collectors = [];
   let stream;
   let requests = 0;
   globalThis.localStorage = { getItem: () => 'test-token' };
@@ -34,13 +34,16 @@ test('SSE parses split CRLF frames, reconnects, detects stale streams, and clean
   };
   let disconnect;
   try {
-    disconnect = connectEventStream({ onSecurityEvent: event => events.push(event), onConnectionChange: value => states.push(value) });
+    disconnect = connectEventStream({ onSecurityEvent: event => events.push(event), onCollectorStatus: value => collectors.push(value), onConnectionChange: value => states.push(value) });
     await tick();
     send('event: connected\r\ndata: ok\r\n\r\nevent: security-event\r\ndata: {"id":');
     send('17,"outcome":"SUCCESS"}\r\n\r\n');
     await tick();
     assert.equal(states.at(-1), 'CONNECTED');
     assert.deepEqual(events, [{ id: 17, outcome: 'SUCCESS' }]);
+    send('event: collector-status\ndata: {"status":"UNAVAILABLE"}\n\n'); await tick();
+    assert.deepEqual(collectors, [{ status: 'UNAVAILABLE' }]);
+    assert.equal(states.at(-1), 'CONNECTED', 'Collector outage does not disconnect the dashboard stream');
     stream.close(); await tick();
     assert.equal(states.at(-1), 'RECONNECTING');
     runTimer(2000); await tick();
