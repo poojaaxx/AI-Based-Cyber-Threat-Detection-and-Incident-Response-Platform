@@ -35,3 +35,5 @@ desktop.ini
 
 # Logs
 *.log
+cyberguard_backup.sql
+*.sql.bak
