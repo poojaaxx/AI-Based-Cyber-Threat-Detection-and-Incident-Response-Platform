@@ -42,15 +42,16 @@ public class NotificationService {
         }
     }
 
-    public void notifyAllAdmins(String title, String message, NotificationType type) {
-        notifyAllAdmins(title, message, type, null, defaultIconFor(type));
+    public int notifyAllAdmins(String title, String message, NotificationType type) {
+        return notifyAllAdmins(title, message, type, null, defaultIconFor(type));
     }
 
-    public void notifyAllAdmins(String title, String message, NotificationType type, Severity severity, String icon) {
+    public int notifyAllAdmins(String title, String message, NotificationType type, Severity severity, String icon) {
         List<User> admins = userRepository.findAll().stream()
                 .filter(u -> u.getRoles().stream().anyMatch(r -> r.getName().equals(Role.ADMIN)))
                 .toList();
         admins.forEach(admin -> notifyUser(admin, title, message, type, severity, icon));
+        return admins.size();
     }
 
     public Page<Notification> getUserNotifications(Long userId, Pageable pageable) {
@@ -61,8 +62,8 @@ public class NotificationService {
         return notificationRepository.countByUserIdAndIsReadFalse(userId);
     }
 
-    public void markAsRead(Long notificationId) {
-        Notification notification = notificationRepository.findById(notificationId)
+    public void markAsRead(Long notificationId, Long userId) {
+        Notification notification = notificationRepository.findByIdAndUserId(notificationId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
         notification.setIsRead(true);
         notificationRepository.save(notification);

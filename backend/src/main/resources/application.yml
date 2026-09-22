@@ -42,6 +42,15 @@ spring:
       max-request-size: 10MB
 
 app:
+  collector:
+    enabled: ${COLLECTOR_ENABLED:false}
+    id: ${COLLECTOR_ID:windows-local}
+    ingest-key: ${COLLECTOR_INGEST_KEY:}
+    demo-rule-enabled: ${COLLECTOR_DEMO_RULE_ENABLED:false}
+    demo-port: ${COLLECTOR_DEMO_PORT:19090}
+    remote-enabled: ${COLLECTOR_REMOTE_ENABLED:false}
+    max-clock-skew-seconds: ${COLLECTOR_MAX_CLOCK_SKEW_SECONDS:300}
+    rate-limit-per-minute: ${COLLECTOR_RATE_LIMIT_PER_MINUTE:300}
   jwt:
     secret: ${JWT_SECRET:c2VjdXJlLWNoYW5nZS10aGlzLXNlY3JldC1rZXktZm9yLWp3dC1zaWduaW5nLWluLXByb2R1Y3Rpb24tZW52aXJvbm1lbnQ=}
     access-token-expiration-ms: ${JWT_ACCESS_EXP:900000}        # 15 minutes
@@ -54,6 +63,13 @@ app:
     # autoRespond() playbook. Falls back to autoRespond() automatically if the
     # AI service is unreachable, regardless of this flag.
     adaptive-mode-enabled: ${ADAPTIVE_RESPONSE_ENABLED:false}
+  auth:
+    # Maximum consecutive failed login attempts before the account is temporarily locked.
+    max-failed-attempts: ${AUTH_MAX_FAILED_ATTEMPTS:5}
+    # How long (minutes) the account is locked after hitting the max-failed-attempts threshold.
+    # The next login attempt after expiry clears temporary lock state.
+    lockout-duration-minutes: ${AUTH_LOCKOUT_DURATION_MINUTES:15}
+
 
 ai-service:
   base-url: ${AI_SERVICE_URL:http://localhost:8000}

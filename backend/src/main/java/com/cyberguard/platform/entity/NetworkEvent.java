@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "network_events")
+@Table(name = "network_events", uniqueConstraints = @UniqueConstraint(name = "uq_network_delivery", columnNames = {"collector_id", "session_id", "sequence_number"}))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,10 +20,10 @@ public class NetworkEvent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "source_ip", nullable = false, length = 45)
+    @Column(name = "source_ip", length = 45)
     private String sourceIp;
 
-    @Column(name = "destination_ip", nullable = false, length = 45)
+    @Column(name = "destination_ip", length = 45)
     private String destinationIp;
 
     @Column(name = "source_port")
@@ -33,6 +33,27 @@ public class NetworkEvent {
     private Integer destinationPort;
 
     private String protocol;
+    private String localIp;
+    private Integer localPort;
+    private String remoteIp;
+    private Integer remotePort;
+    private String tcpState;
+    private Long processId;
+    private String processName;
+    private java.time.Instant connectionCreatedAt;
+    private java.time.Instant observedAt;
+    private java.time.Instant ingestedAt;
+    @Column(name = "collector_id", length = 60)
+    private String collectorId;
+    @Column(name = "session_id", length = 36)
+    private String sessionId;
+    @Column(name = "sequence_number")
+    private Long sequence;
+    @Column(length = 36)
+    private String connectionId;
+    private String eventType;
+    private String ruleId;
+
 
     @Column(name = "bytes_transferred")
     private Long bytesTransferred;

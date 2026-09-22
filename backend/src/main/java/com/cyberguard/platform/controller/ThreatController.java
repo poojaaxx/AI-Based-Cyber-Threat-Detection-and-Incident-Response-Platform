@@ -29,6 +29,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/threats")
+@PreAuthorize("hasAnyRole('ADMIN','ANALYST','USER')")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Threats", description = "AI-based threat detection results")
@@ -95,6 +96,7 @@ public class ThreatController {
      * primary RandomForest detector.
      */
     @PostMapping("/predict-temporal")
+    @PreAuthorize("hasAnyRole('ADMIN','ANALYST')")
     public ResponseEntity<?> predictTemporal(@RequestBody TemporalPredictionRequest request) {
         try {
             return ResponseEntity.ok(aiServiceClient.predictTemporal(request.getRecords()));

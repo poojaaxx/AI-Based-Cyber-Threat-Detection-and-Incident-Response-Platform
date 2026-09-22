@@ -3,12 +3,12 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShieldCheck, Loader2, Crown, ShieldHalf, User, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-// Demo Account Selector — for academic demonstration only. Safe to delete this
-// constant and the "Demo Accounts" block below before a production deployment.
+// Demo Account Selector — pre-fills username only. Passwords are NOT stored here.
+// Obtain credentials through your administrator; never embed them in frontend code.
 const DEMO_ACCOUNTS = [
-  { label: 'Administrator', username: 'admin', password: 'Password@123', icon: Crown, accent: 'text-cg-warning' },
-  { label: 'Security Analyst', username: 'alice.analyst', password: 'Password@123', icon: ShieldHalf, accent: 'text-cg-info' },
-  { label: 'Standard User', username: 'bob.user', password: 'Password@123', icon: User, accent: 'text-cg-accent' },
+  { label: 'Administrator', username: 'admin', icon: Crown, accent: 'text-cg-warning' },
+  { label: 'Security Analyst', username: 'alice.analyst', icon: ShieldHalf, accent: 'text-cg-info' },
+  { label: 'Standard User', username: 'bob.user', icon: User, accent: 'text-cg-accent' },
 ];
 
 export default function Login() {
@@ -36,7 +36,8 @@ export default function Login() {
 
   const useDemoAccount = (account) => {
     setError('');
-    setForm({ usernameOrEmail: account.username, password: account.password });
+    // Pre-fills username only. Enter the password manually (see database/seed.sql).
+    setForm({ usernameOrEmail: account.username, password: '' });
   };
 
   return (
@@ -102,8 +103,11 @@ export default function Login() {
         </form>
 
         <div className="mt-6">
-          <p className="text-xs text-slate-500 text-center mb-3">
-            Demo Accounts <span className="text-slate-600">(For Academic Demonstration Only)</span>
+          <p className="text-xs text-slate-500 text-center mb-1">
+            Demo Accounts <span className="text-slate-600">(Academic Demonstration Only)</span>
+          </p>
+          <p className="text-[11px] text-slate-600 text-center mb-3">
+            Pre-fills username only — enter your password manually.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {DEMO_ACCOUNTS.map((account) => {
@@ -118,7 +122,7 @@ export default function Login() {
                     onClick={() => useDemoAccount(account)}
                     className="cg-btn-secondary w-full text-xs mt-1 py-1.5"
                   >
-                    Use Demo Account
+                    Use Username
                   </button>
                 </div>
               );

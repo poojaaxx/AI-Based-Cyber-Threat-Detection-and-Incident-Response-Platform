@@ -35,6 +35,7 @@ class ResponseActionServiceTest {
     private ResponseActionRepository responseActionRepository;
     private BlockedIpRepository blockedIpRepository;
     private UserRepository userRepository;
+    private com.cyberguard.platform.repository.ThreatRepository threatRepository;
     private IncidentService incidentService;
     private NotificationService notificationService;
     private AuditLogService auditLogService;
@@ -46,13 +47,15 @@ class ResponseActionServiceTest {
         responseActionRepository = mock(ResponseActionRepository.class);
         blockedIpRepository = mock(BlockedIpRepository.class);
         userRepository = mock(UserRepository.class);
+        threatRepository = mock(com.cyberguard.platform.repository.ThreatRepository.class);
+        when(threatRepository.findById(any())).thenReturn(Optional.of(highSeverityThreat()));
         incidentService = mock(IncidentService.class);
         notificationService = mock(NotificationService.class);
         auditLogService = mock(AuditLogService.class);
         aiServiceClient = mock(AiServiceClient.class);
 
         service = new ResponseActionService(
-                responseActionRepository, blockedIpRepository, userRepository,
+                responseActionRepository, blockedIpRepository, userRepository, threatRepository,
                 incidentService, notificationService, auditLogService, aiServiceClient
         );
 
@@ -118,5 +121,18 @@ class ResponseActionServiceTest {
         verify(incidentService, times(1)).createAutomatedIncident(threat);
         verify(notificationService, times(1)).notifyAllAdmins(
                 anyString(), anyString(), any(), any(), anyString());
+    }
+
+    @Test
+    void executionFailureDoesNotRetryStaticPlaybookOrRecordSuccess() {
+        Threat threat = highSeverityThreat();
+        when(aiServiceClient.recommendAction(anyString(), anyString(), anyDouble()))
+            .thenReturn(new PolicyRecommendationResponse("state", "QUARANTINE", Map.of()));
+        when(threatRepository.saveAndFlush(any())).thenThrow(new IllegalStateException("database unavailable"));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
+            () -> service.autoRespondAdaptive(threat));
+        verify(responseActionRepository, never()).save(any());
+        verify(incidentService, never()).createAutomatedIncident(any());
+        verify(blockedIpRepository, never()).save(any());
     }
 }
