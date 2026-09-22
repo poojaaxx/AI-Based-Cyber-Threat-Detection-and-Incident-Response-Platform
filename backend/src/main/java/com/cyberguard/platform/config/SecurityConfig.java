@@ -39,6 +39,9 @@ public class SecurityConfig {
 
     @Value("${app.collector.enabled:false}") private boolean collectorEnabled;
     @Value("${app.collector.ingest-key:}") private String collectorKey;
+    @Value("${app.collector.remote-enabled:false}") private boolean collectorRemoteEnabled;
+    @Value("${app.collector.max-clock-skew-seconds:300}") private long collectorMaxClockSkewSeconds;
+    @Value("${app.collector.rate-limit-per-minute:300}") private int collectorRateLimitPerMinute;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -86,7 +89,9 @@ public class SecurityConfig {
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(new com.cyberguard.platform.security.CollectorAuthenticationFilter(collectorEnabled, collectorKey), UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(new com.cyberguard.platform.security.CollectorAuthenticationFilter(
+                    collectorEnabled, collectorKey, collectorRemoteEnabled,
+                    collectorMaxClockSkewSeconds, collectorRateLimitPerMinute), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

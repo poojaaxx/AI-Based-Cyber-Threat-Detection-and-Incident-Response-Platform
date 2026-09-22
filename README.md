@@ -315,6 +315,18 @@ MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USERNAME=
 MAIL_PASSWORD=
+
+# Phase 3B: dedicated collector ingest identity (not a user JWT)
+COLLECTOR_ENABLED=false
+COLLECTOR_ID=windows-local
+COLLECTOR_INGEST_KEY=
+COLLECTOR_DEMO_RULE_ENABLED=false
+COLLECTOR_DEMO_PORT=19090
+# Set true only on the deployed backend to accept a remote Windows collector over HTTPS —
+# see collectors/windows/README.md
+COLLECTOR_REMOTE_ENABLED=false
+COLLECTOR_MAX_CLOCK_SKEW_SECONDS=300
+COLLECTOR_RATE_LIMIT_PER_MINUTE=300
 ```
 
 **`frontend/.env.example`**
