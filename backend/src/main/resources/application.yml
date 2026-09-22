@@ -54,6 +54,13 @@ app:
     # autoRespond() playbook. Falls back to autoRespond() automatically if the
     # AI service is unreachable, regardless of this flag.
     adaptive-mode-enabled: ${ADAPTIVE_RESPONSE_ENABLED:false}
+  auth:
+    # Maximum consecutive failed login attempts before the account is temporarily locked.
+    max-failed-attempts: ${AUTH_MAX_FAILED_ATTEMPTS:5}
+    # How long (minutes) the account is locked after hitting the max-failed-attempts threshold.
+    # The next login attempt after expiry clears temporary lock state.
+    lockout-duration-minutes: ${AUTH_LOCKOUT_DURATION_MINUTES:15}
+
 
 ai-service:
   base-url: ${AI_SERVICE_URL:http://localhost:8000}

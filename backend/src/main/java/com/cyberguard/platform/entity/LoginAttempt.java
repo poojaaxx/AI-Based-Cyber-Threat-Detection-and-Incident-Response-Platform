@@ -33,6 +33,9 @@ public class LoginAttempt {
     @Column(nullable = false)
     private Boolean success;
 
+    @Column(length = 30)
+    private String outcome;
+
     @Column(name = "user_agent")
     private String userAgent;
 

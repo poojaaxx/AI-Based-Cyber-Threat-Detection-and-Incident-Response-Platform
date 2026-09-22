@@ -80,7 +80,8 @@ public class ReportService {
                 row.createCell(0).setCellValue(t.getId());
                 row.createCell(1).setCellValue(t.getThreatType().name());
                 row.createCell(2).setCellValue(t.getSeverity().name());
-                row.createCell(3).setCellValue(t.getConfidenceScore().doubleValue());
+                if (t.getConfidenceScore() != null) row.createCell(3).setCellValue(t.getConfidenceScore().doubleValue());
+                else row.createCell(3).setCellValue("N/A");
                 row.createCell(4).setCellValue(t.getSourceIp());
                 row.createCell(5).setCellValue(t.getDestinationIp());
                 row.createCell(6).setCellValue(t.getStatus().name());
@@ -113,7 +114,7 @@ public class ReportService {
                 table.addCell(String.valueOf(t.getId()));
                 table.addCell(t.getThreatType().name());
                 table.addCell(t.getSeverity().name());
-                table.addCell(t.getConfidenceScore() + "%");
+                table.addCell(t.getConfidenceScore() == null ? "N/A" : t.getConfidenceScore() + "%");
                 table.addCell(t.getSourceIp() != null ? t.getSourceIp() : "-");
                 table.addCell(t.getDestinationIp() != null ? t.getDestinationIp() : "-");
                 table.addCell(t.getDetectedAt().format(FMT));

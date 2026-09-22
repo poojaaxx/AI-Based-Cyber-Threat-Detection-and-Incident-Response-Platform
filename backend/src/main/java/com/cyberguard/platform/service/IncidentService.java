@@ -79,19 +79,20 @@ public class IncidentService {
         return incident;
     }
 
+    @Transactional
     public Incident createAutomatedIncident(Threat threat) {
         Incident incident = Incident.builder()
                 .incidentNumber(generateIncidentNumber())
                 .title(threat.getThreatType() + " detected from " + threat.getSourceIp())
-                .description("Automatically generated incident from AI threat detection engine. " +
+                .description("Automatically generated incident from " + ("RULE".equals(threat.getDetectorType()) ? "authentication RULE detection. " : "AI threat detection engine. ") +
                         "Recommended action: " + threat.getRecommendedAction())
                 .severity(threat.getSeverity())
                 .status(IncidentStatus.OPEN)
                 .threat(threat)
-                .reportedBy(systemUser())
+                .reportedBy(null) // System-generated; no interactive user identity.
                 .build();
         incident = incidentRepository.save(incident);
-        addTimelineEvent(incident, "CREATED", "Auto-generated from AI threat detection", null);
+        addTimelineEvent(incident, "CREATED", "Auto-generated from " + ("RULE".equals(threat.getDetectorType()) ? "authentication RULE detection" : "AI threat detection"), null);
         return incident;
     }
 
@@ -183,9 +184,5 @@ public class IncidentService {
         int year = LocalDateTime.now().getYear();
         long seq = SEQUENCE.incrementAndGet();
         return String.format("INC-%d-%06d", year, seq);
-    }
-
-    private User systemUser() {
-        return userRepository.findByUsername("admin").orElse(null);
     }
 }

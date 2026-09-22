@@ -33,8 +33,20 @@ public class Threat {
     @Column(nullable = false)
     private Severity severity;
 
-    @Column(name = "confidence_score", nullable = false)
+    @Column(name = "confidence_score")
     private BigDecimal confidenceScore;
+
+    @Column(name = "detector_type", length = 20)
+    private String detectorType;
+
+    @Column(name = "detection_key", unique = true, length = 100)
+    private String detectionKey;
+
+    @Column(name = "login_attempt_id")
+    private Long loginAttemptId;
+
+    @Lob @Column(name = "rule_evidence", columnDefinition = "TEXT")
+    private String ruleEvidence;
 
     @Column(name = "source_ip", length = 45)
     private String sourceIp;

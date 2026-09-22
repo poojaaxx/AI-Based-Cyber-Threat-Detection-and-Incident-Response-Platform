@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { connectEventStream } from '../services/eventStreamService';
 
-const EventStreamContext = createContext({ connected: false });
+const EventStreamContext = createContext({ connected: false, state: 'DISCONNECTED' });
 
 /**
  * Opens exactly one SSE connection for the authenticated shell and republishes
@@ -10,18 +10,19 @@ const EventStreamContext = createContext({ connected: false });
  * their own, so navigating the app never doubles up backend SSE subscriptions.
  */
 export function EventStreamProvider({ children }) {
-  const [connected, setConnected] = useState(false);
+  const [state, setState] = useState('DISCONNECTED');
 
   useEffect(() => {
     const disconnect = connectEventStream({
       onNotification: (payload) => window.dispatchEvent(new CustomEvent('cg:notification', { detail: payload })),
       onDashboardUpdate: (payload) => window.dispatchEvent(new CustomEvent('cg:dashboard-update', { detail: payload })),
-      onConnectionChange: setConnected,
+      onConnectionChange: setState,
+      onSecurityEvent: (payload) => window.dispatchEvent(new CustomEvent('cg:security-event', { detail: payload })),
     });
     return disconnect;
   }, []);
 
-  return <EventStreamContext.Provider value={{ connected }}>{children}</EventStreamContext.Provider>;
+  return <EventStreamContext.Provider value={{ connected: state === 'CONNECTED', state }}>{children}</EventStreamContext.Provider>;
 }
 
 export function useEventStreamStatus() {

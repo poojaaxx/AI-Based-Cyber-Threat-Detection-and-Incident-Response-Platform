@@ -24,9 +24,21 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class EventStreamController {
 
     private final SseHubService sseHubService;
+    private final com.cyberguard.platform.security.JwtUtil jwtUtil;
+    private final com.cyberguard.platform.security.CustomUserDetailsService userDetailsService;
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter stream(@AuthenticationPrincipal CustomUserDetails principal) {
-        return sseHubService.subscribe(principal.getId());
+    public SseEmitter stream(@AuthenticationPrincipal CustomUserDetails principal,
+                             @org.springframework.web.bind.annotation.RequestHeader("Authorization") String authorization) {
+        boolean monitoringAllowed = principal.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_ANALYST"));
+        String token = authorization.startsWith("Bearer ") ? authorization.substring(7) : "";
+        return sseHubService.subscribe(principal.getId(), monitoringAllowed, () -> {
+            if (!jwtUtil.isTokenValid(token)) return false;
+            var current = userDetailsService.loadUserByUsername(principal.getUsername());
+            return current.isEnabled() && current.isAccountNonLocked()
+                    && (!monitoringAllowed || current.getAuthorities().stream().anyMatch(a ->
+                    a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_ANALYST")));
+        });
     }
 }

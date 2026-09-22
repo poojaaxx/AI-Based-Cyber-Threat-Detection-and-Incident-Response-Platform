@@ -95,24 +95,38 @@ public class ThreatService {
                 .crossModelAgreement(crossModel.agreement())
                 .build();
 
-        threat = threatRepository.save(threat);
-        // Routes to either the RL-based autoRespondAdaptive() or the static
-        // autoRespond() playbook depending on the adaptive-mode-enabled config
-        // flag (see ResponseActionService.handleThreatResponse).
-        Incident incident = responseActionService.handleThreatResponse(threat);
-        sseHubService.broadcastDashboardUpdate("THREAT_DETECTED");
+        ThreatDetectionResponse result = persistFinding(threat);
+        threat = result.getThreat();
 
         auditLogService.log(actor, "SIMULATE_THREAT_DETECTION", "Threat", threat.getId(),
                 String.format("Ran AI threat detection: %s (%s, %.1f%% confidence)",
                         threat.getThreatType(), threat.getSeverity(), threat.getConfidenceScore()),
                 null);
 
-        return ThreatDetectionResponse.builder()
-                .threat(threat)
-                .incidentCreated(incident != null)
-                .incidentId(incident != null ? incident.getId() : null)
-                .incidentNumber(incident != null ? incident.getIncidentNumber() : null)
-                .build();
+        return result;
+    }
+
+    /** Authentication rules never invoke either classifier or the adaptive AI policy. */
+    @Transactional
+    public ThreatDetectionResponse persistAuthenticationFinding(com.cyberguard.platform.entity.LoginAttempt attempt,
+                                                               String evidence) {
+        Threat threat = Threat.builder().threatType(ThreatType.BRUTE_FORCE).severity(Severity.HIGH)
+                .detectorType("RULE").detectionKey("AUTH_LOCKOUT:" + attempt.getId())
+                .loginAttemptId(attempt.getId()).ruleEvidence(evidence)
+                .sourceIp(attempt.getIpAddress()).affectedUser(attempt.getUser())
+                .reasoning("Repeated authentication failures / suspected brute force. The configured account lockout threshold was reached.")
+                .recommendedAction("Review the authentication evidence; the existing temporary account lockout is active.")
+                .detectedAt(LocalDateTime.now()).status(ThreatStatus.DETECTED).build();
+        return persistFinding(threat);
+    }
+
+    private ThreatDetectionResponse persistFinding(Threat threat) {
+        threat = threatRepository.save(threat);
+        Incident incident = responseActionService.handleThreatResponse(threat);
+        sseHubService.broadcastDashboardUpdate("THREAT_DETECTED");
+        return ThreatDetectionResponse.builder().threat(threat).incidentCreated(incident != null)
+                .incidentId(incident == null ? null : incident.getId())
+                .incidentNumber(incident == null ? null : incident.getIncidentNumber()).build();
     }
 
     public Page<Threat> getThreats(Pageable pageable) {

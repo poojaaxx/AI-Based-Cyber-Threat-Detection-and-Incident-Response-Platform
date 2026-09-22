@@ -48,7 +48,7 @@ export default function ExplainAiPanel({ explanation }) {
           </div>
           <div>
             <p className="text-xs text-slate-400 uppercase">Confidence</p>
-            <p className="text-2xl font-bold text-slate-100">{Number(explanation.confidenceScore).toFixed(0)}%</p>
+            <p className="text-2xl font-bold text-slate-100">{explanation.confidenceScore == null ? 'N/A' : `${Number(explanation.confidenceScore).toFixed(0)}%`}</p>
           </div>
         </div>
 

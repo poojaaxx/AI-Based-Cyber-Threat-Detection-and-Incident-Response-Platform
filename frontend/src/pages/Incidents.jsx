@@ -22,7 +22,7 @@ export default function Incidents() {
   const load = () => {
     setLoading(true);
     incidentService
-      .getIncidents({ page, size: 15, status: status || undefined })
+      .getIncidents({ page, size: 15, sort: 'createdAt,desc', status: status || undefined })
       .then(({ data }) => {
         setIncidents(data.content);
         setTotalPages(data.totalPages);
@@ -32,6 +32,9 @@ export default function Incidents() {
 
   useEffect(() => {
     load();
+    window.addEventListener('cg:dashboard-update', load);
+    window.addEventListener('cg:stream-connected', load);
+    return () => { window.removeEventListener('cg:dashboard-update', load); window.removeEventListener('cg:stream-connected', load); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, status]);
 

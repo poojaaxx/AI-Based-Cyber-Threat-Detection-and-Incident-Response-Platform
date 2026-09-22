@@ -46,7 +46,7 @@ public class Incident {
     private Threat threat;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reported_by", nullable = false)
+    @JoinColumn(name = "reported_by")
     private User reportedBy;
 
     @ManyToOne(fetch = FetchType.LAZY)

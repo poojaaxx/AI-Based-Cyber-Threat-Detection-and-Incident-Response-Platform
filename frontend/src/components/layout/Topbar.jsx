@@ -25,7 +25,7 @@ function useBreadcrumb() {
 export default function Topbar({ title, onMenuClick }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { connected } = useEventStreamStatus();
+  const { connected, state } = useEventStreamStatus();
   const breadcrumb = useBreadcrumb();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -82,13 +82,13 @@ export default function Topbar({ title, onMenuClick }) {
       <div className="flex items-center gap-3 sm:gap-5">
         <div
           className="hidden md:flex items-center gap-1.5 rounded-full border border-cg-border bg-cg-surface-alt/60 px-2.5 py-1 text-[11px] font-medium text-slate-400"
-          title={connected ? 'Live updates connected' : 'Reconnecting to live updates...'}
+          title={state}
         >
           <span className="relative flex h-1.5 w-1.5">
             {connected && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cg-success opacity-75" />}
             <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${connected ? 'bg-cg-success' : 'bg-slate-500'}`} />
           </span>
-          {connected ? 'Live' : 'Reconnecting'}
+          {state}
         </div>
         <NotificationCenter />
 

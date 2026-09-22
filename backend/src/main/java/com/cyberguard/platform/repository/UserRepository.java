@@ -15,6 +15,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
     Optional<User> findByUsernameOrEmail(String username, String email);
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from User u where u.username = :login or u.email = :login")
+    Optional<User> findForLogin(@Param("login") String login);
+
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
     long countByRoles_Name(String roleName);

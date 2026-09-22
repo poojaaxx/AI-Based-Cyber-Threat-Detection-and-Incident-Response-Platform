@@ -53,6 +53,12 @@ public class User {
     @Builder.Default
     private Integer failedLoginAttempts = 0;
 
+    /** Populated when the account is temporarily locked after too many failed attempts.
+     *  Null means no temporary lock. The next login attempt after expiry clears
+     *  temporary failure state; administrative DISABLED/LOCKED states remain separate. */
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
+
     @Column(name = "must_change_password", nullable = false)
     @Builder.Default
     private Boolean mustChangePassword = false;

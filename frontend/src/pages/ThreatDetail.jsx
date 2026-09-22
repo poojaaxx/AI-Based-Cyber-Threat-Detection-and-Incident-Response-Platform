@@ -55,7 +55,7 @@ export default function ThreatDetail() {
     threatService.getById(id).then(({ data }) => setThreat(data));
     threatService.explain(id)
       .then(({ data }) => setExplanation(data))
-      .catch(() => setExplanationError('AI explanation is unavailable for this threat.'));
+      .catch(() => setExplanationError('Detection explanation is unavailable for this threat.'));
   };
 
   useEffect(() => { load(); }, [id]);
@@ -139,17 +139,17 @@ export default function ThreatDetail() {
         </div>
 
         <div className="grid grid-cols-2 gap-4 text-sm">
-          <Info label="Confidence Score" value={`${Number(threat.confidenceScore).toFixed(2)}%`} />
+          <Info label="Confidence Score" value={threat.confidenceScore == null ? 'Not applicable' : `${Number(threat.confidenceScore).toFixed(2)}%`} />
           <Info label="Protocol" value={threat.protocol || 'N/A'} />
           <Info label="Source" value={`${threat.sourceIp || '-'}:${threat.sourcePort || '-'}`} />
           <Info label="Destination" value={`${threat.destinationIp || '-'}:${threat.destinationPort || '-'}`} />
           <Info label="Detected At" value={new Date(threat.detectedAt).toLocaleString()} />
-          <Info label="Detection Model" value="RandomForest (Model A)" hint="Primary classifier; runs on every detection." />
-          <Info
+          <Info label="Detector" value={threat.detectorType === 'RULE' ? 'RULE - AUTH_LOCKOUT_V1' : 'RandomForest (Model A)'} />
+          {threat.detectorType !== 'RULE' && <Info
             label="Cross-Model Check (Model B)"
             value={crossModelLabel(threat)}
             hint="Model A's request fields are approximately translated into an NSL-KDD-shaped record and classified by the attention-LSTM temporal detector (Model B). Severity is escalated when both models agree it's malicious; disagreement is flagged for review, not auto-escalated."
-          />
+          />}
         </div>
 
         <div>
@@ -171,7 +171,7 @@ export default function ThreatDetail() {
         )}
       </div>
 
-      <div className="cg-card space-y-3">
+      {threat.detectorType !== 'RULE' && <div className="cg-card space-y-3">
         <div className="flex items-center gap-2">
           <Sparkles size={16} className="text-cg-accent" />
           <h3 className="text-sm font-semibold text-slate-100">Temporal Detector Demo (Model B)</h3>
@@ -229,10 +229,15 @@ export default function ThreatDetail() {
             <p className="text-xs text-slate-500 pt-1 border-t border-cg-border">{temporalResult.note}</p>
           </div>
         )}
-      </div>
+      </div>}
 
       {explanationError && <p className="text-sm text-slate-500">{explanationError}</p>}
-      <ExplainAiPanel explanation={explanation} />
+      {threat.detectorType === 'RULE' ? <div className="cg-card space-y-3">
+        <h3 className="font-semibold">RULE evidence - Repeated authentication failures</h3>
+        <p>{threat.reasoning}</p>
+        <p>Login attempt #{threat.loginAttemptId} / Confidence: not applicable</p>
+        <pre className="text-xs whitespace-pre-wrap">{threat.ruleEvidence}</pre>
+      </div> : <ExplainAiPanel explanation={explanation} />}
     </div>
   );
 }
