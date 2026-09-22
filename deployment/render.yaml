@@ -31,6 +31,19 @@ services:
           property: hostport
       - key: CORS_ALLOWED_ORIGINS
         sync: false
+      # Phase 3B remote Windows collector (see collectors/windows/README.md). Loopback-only
+      # collector requests keep working even if these are unset; this only additionally allows
+      # a collector on a remote Windows host to authenticate over HTTPS.
+      - key: COLLECTOR_ENABLED
+        value: "true"
+      - key: COLLECTOR_REMOTE_ENABLED
+        value: "true"
+      - key: COLLECTOR_INGEST_KEY
+        generateValue: true
+      - key: COLLECTOR_MAX_CLOCK_SKEW_SECONDS
+        value: "300"
+      - key: COLLECTOR_RATE_LIMIT_PER_MINUTE
+        value: "300"
 
   - type: web
     name: cyberguard-ai-service

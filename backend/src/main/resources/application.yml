@@ -48,6 +48,9 @@ app:
     ingest-key: ${COLLECTOR_INGEST_KEY:}
     demo-rule-enabled: ${COLLECTOR_DEMO_RULE_ENABLED:false}
     demo-port: ${COLLECTOR_DEMO_PORT:19090}
+    remote-enabled: ${COLLECTOR_REMOTE_ENABLED:false}
+    max-clock-skew-seconds: ${COLLECTOR_MAX_CLOCK_SKEW_SECONDS:300}
+    rate-limit-per-minute: ${COLLECTOR_RATE_LIMIT_PER_MINUTE:300}
   jwt:
     secret: ${JWT_SECRET:c2VjdXJlLWNoYW5nZS10aGlzLXNlY3JldC1rZXktZm9yLWp3dC1zaWduaW5nLWluLXByb2R1Y3Rpb24tZW52aXJvbm1lbnQ=}
     access-token-expiration-ms: ${JWT_ACCESS_EXP:900000}        # 15 minutes

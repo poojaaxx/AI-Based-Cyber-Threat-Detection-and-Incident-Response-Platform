@@ -1,8 +1,8 @@
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
-    [string]$BackendUrl = 'http://127.0.0.1:8080',
-    [string]$CollectorId = 'windows-local',
+    [string]$BackendUrl = $(if ($env:CYBERGUARD_BACKEND_URL) { $env:CYBERGUARD_BACKEND_URL } else { 'http://127.0.0.1:8080' }),
+    [string]$CollectorId = $(if ($env:COLLECTOR_ID) { $env:COLLECTOR_ID } else { 'windows-local' }),
     [ValidateRange(500,10000)][int]$SampleIntervalMs = 1000,
     [ValidateRange(2,10)][int]$MissingSamples = 2,
     [ValidateRange(1,1000)][int]$BufferCapacity = 1000,
@@ -10,9 +10,14 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $endpoint = [Uri]$BackendUrl
-if ($endpoint.Scheme -ne 'http' -or $endpoint.Host -notin @('127.0.0.1','localhost','[::1]','::1') -or
-    $endpoint.AbsolutePath -ne '/' -or $endpoint.Query -or $endpoint.UserInfo) {
-    throw 'Use a loopback HTTP backend origin, for example http://127.0.0.1:8080.'
+$isLoopbackHost = $endpoint.Host -in @('127.0.0.1','localhost','[::1]','::1')
+if ($endpoint.AbsolutePath -ne '/' -or $endpoint.Query -or $endpoint.UserInfo) {
+    throw 'Backend URL must be a bare origin, for example https://cyberguard-backend.onrender.com or http://127.0.0.1:8080.'
+}
+if ($isLoopbackHost) {
+    if ($endpoint.Scheme -ne 'http') { throw 'Use plain HTTP for a loopback backend origin, for example http://127.0.0.1:8080.' }
+} else {
+    if ($endpoint.Scheme -ne 'https') { throw 'Use HTTPS for a remote backend origin, for example https://cyberguard-backend.onrender.com. The deployed backend must also have COLLECTOR_REMOTE_ENABLED=true.' }
 }
 if ($CollectorId -notmatch '^[a-zA-Z0-9_-]{1,60}$') { throw 'Invalid collector ID.' }
 if ([string]::IsNullOrWhiteSpace($env:COLLECTOR_INGEST_KEY) -or $env:COLLECTOR_INGEST_KEY.Length -lt 32) {
@@ -41,8 +46,8 @@ function Send-CollectorRequest([string]$Path, $Body) {
     if ($bytes.Length -gt 262144) { throw 'Collector batch exceeds the allowed size.' }
     try {
         $null = Invoke-RestMethod -Method Post -Uri ($BackendUrl.TrimEnd('/') + '/api/v1/collector/' + $Path) `
-            -Headers @{ 'X-Collector-Key' = $env:COLLECTOR_INGEST_KEY } `
-            -ContentType 'application/json' -Body $bytes -TimeoutSec 2
+            -Headers @{ 'X-Collector-Key' = $env:COLLECTOR_INGEST_KEY; 'X-Collector-Timestamp' = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() } `
+            -ContentType 'application/json' -Body $bytes -TimeoutSec 5
         return $true
     } catch {
         # Never print the request, credential, or raw HTTP exception.
@@ -64,7 +69,7 @@ function Add-Observation($Record, [string]$EventType, [string]$ObservedAt) {
     $script:queue.Enqueue($item)
 }
 
-Write-Host "Windows TCP observer: $CollectorId; session $sessionId. Sampled metadata only. Ctrl+C stops."
+Write-Host "Windows TCP observer: $CollectorId; session $sessionId; backend $BackendUrl. Sampled metadata only. Ctrl+C stops."
 try {
     while ($RunSeconds -eq 0 -or ([DateTimeOffset]::UtcNow - $started).TotalSeconds -lt $RunSeconds) {
         $cycle = [Diagnostics.Stopwatch]::StartNew()
@@ -85,11 +90,11 @@ try {
             if ($baseline) { $connections=@{} }
             $seen=@{}
             $names=@{}
-            # Both loopback endpoints appear in the Windows TCP table. Suppress the
-            # server-side mirror too, including TIME_WAIT after Windows releases PID.
+            # This process's own outbound connections to the backend (loopback or remote) must never
+            # appear as observations. Matching on owning PID + remote port covers both cases without
+            # depending on the backend's remote address, which varies for a cloud-hosted origin.
             foreach ($socket in $snapshot) {
-                if ($socket.OwningProcess -eq $PID -and $socket.RemotePort -eq $endpoint.Port -and
-                    $socket.RemoteAddress -in @('127.0.0.1','::1','::ffff:127.0.0.1')) {
+                if ($socket.OwningProcess -eq $PID -and $socket.RemotePort -eq $endpoint.Port) {
                     $forward=@($socket.LocalAddress,$socket.LocalPort,$socket.RemoteAddress,$socket.RemotePort) -join '|'
                     $reverse=@($socket.RemoteAddress,$socket.RemotePort,$socket.LocalAddress,$socket.LocalPort) -join '|'
                     $controlSockets[$forward]=$sampleTime; $controlSockets[$reverse]=$sampleTime
