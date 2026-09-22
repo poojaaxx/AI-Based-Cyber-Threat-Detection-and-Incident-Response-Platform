@@ -254,8 +254,8 @@ CREATE TABLE login_attempts (
 
 CREATE TABLE network_events (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    source_ip VARCHAR(45) NOT NULL,
-    destination_ip VARCHAR(45) NOT NULL,
+    source_ip VARCHAR(45),
+    destination_ip VARCHAR(45),
     source_port INT,
     destination_port INT,
     protocol VARCHAR(20),
@@ -263,7 +263,24 @@ CREATE TABLE network_events (
     packet_count INT,
     flagged BOOLEAN NOT NULL DEFAULT FALSE,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_netevents_created (created_at)
+    INDEX idx_netevents_created (created_at),
+    local_ip VARCHAR(255) NULL,
+    local_port INT NULL,
+    remote_ip VARCHAR(255) NULL,
+    remote_port INT NULL,
+    tcp_state VARCHAR(255) NULL,
+    process_id BIGINT NULL,
+    process_name VARCHAR(255) NULL,
+    connection_created_at DATETIME(6) NULL,
+    observed_at DATETIME(6) NULL,
+    ingested_at DATETIME(6) NULL,
+    collector_id VARCHAR(60) NULL,
+    session_id VARCHAR(36) NULL,
+    sequence_number BIGINT NULL,
+    connection_id VARCHAR(36) NULL,
+    event_type VARCHAR(255) NULL,
+    rule_id VARCHAR(255) NULL,
+    UNIQUE KEY uq_network_delivery (collector_id,session_id,sequence_number)
 );
 
 -- =====================================================================
@@ -356,7 +373,8 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 CREATE TABLE security_events (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    login_attempt_id BIGINT NOT NULL UNIQUE,
+    login_attempt_id BIGINT NULL UNIQUE,
+    network_event_id BIGINT NULL UNIQUE,
     source VARCHAR(255) NOT NULL,
     event_type VARCHAR(255) NOT NULL,
     username VARCHAR(255),
@@ -373,6 +391,15 @@ CREATE TABLE security_events (
     evidence TEXT,
     INDEX idx_security_events_observed (observed_at),
     FOREIGN KEY (login_attempt_id) REFERENCES login_attempts(id),
+    FOREIGN KEY (network_event_id) REFERENCES network_events(id),
     FOREIGN KEY (threat_id) REFERENCES threats(id),
     FOREIGN KEY (incident_id) REFERENCES incidents(id)
+);
+
+CREATE TABLE IF NOT EXISTS collector_state (
+ collector_id VARCHAR(60) PRIMARY KEY, session_id VARCHAR(36),
+ session_started_at DATETIME(6), last_heartbeat_at DATETIME(6),
+ last_successful_sample_at DATETIME(6), sample_error VARCHAR(255), delivery_error VARCHAR(255), status VARCHAR(255),
+ queued_events BIGINT NOT NULL DEFAULT 0, dropped_events BIGINT NOT NULL DEFAULT 0,
+ received_events BIGINT NOT NULL DEFAULT 0, gap_count BIGINT NOT NULL DEFAULT 0
 );

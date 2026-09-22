@@ -4,15 +4,18 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.Instant;
 
-/** Sanitized authentication feed: deliberately contains no User, password or token. */
+/** Sanitized authentication/network feed: contains no User, password, token or packet payload. */
 @Entity
 @Table(name = "security_events", indexes = @Index(name = "idx_security_events_observed", columnList = "observed_at"))
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class SecurityEvent {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(nullable = false, unique = true)
+    @Column(unique = true)
     private Long loginAttemptId;
+    @OneToOne
+    @JoinColumn(name = "network_event_id", unique = true)
+    private NetworkEvent networkEvent;
     @Column(nullable = false)
     private String source;
     @Column(nullable = false)

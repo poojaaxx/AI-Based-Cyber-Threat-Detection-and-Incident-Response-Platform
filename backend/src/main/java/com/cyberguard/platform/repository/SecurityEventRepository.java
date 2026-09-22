@@ -6,5 +6,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface SecurityEventRepository extends JpaRepository<SecurityEvent, Long> {
+    Page<SecurityEvent> findBySourceOrderByIdDesc(String source, Pageable pageable);
     Page<SecurityEvent> findAllByOrderByIdDesc(Pageable pageable);
 }

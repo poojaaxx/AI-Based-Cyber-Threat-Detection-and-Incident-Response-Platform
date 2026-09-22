@@ -32,6 +32,7 @@ class StabilizationWebTest {
     @MockBean EmailService email;
     @MockBean SseHubService sse;
     @MockBean MonitoringService monitoring;
+    @MockBean NetworkCollectorService networkCollector;
     @MockBean SecurityEventRepository securityEvents;
 
     @Test void liveHistoryIsRestrictedToMonitoringRoles() throws Exception {

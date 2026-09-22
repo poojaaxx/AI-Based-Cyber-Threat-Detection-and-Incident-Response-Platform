@@ -17,6 +17,7 @@ export function EventStreamProvider({ children }) {
       onNotification: (payload) => window.dispatchEvent(new CustomEvent('cg:notification', { detail: payload })),
       onDashboardUpdate: (payload) => window.dispatchEvent(new CustomEvent('cg:dashboard-update', { detail: payload })),
       onConnectionChange: setState,
+      onCollectorStatus: (payload) => window.dispatchEvent(new CustomEvent('cg:collector-status', { detail: payload })),
       onSecurityEvent: (payload) => window.dispatchEvent(new CustomEvent('cg:security-event', { detail: payload })),
     });
     return disconnect;
