@@ -29,6 +29,7 @@ public class ResponseActionService {
     private final ResponseActionRepository responseActionRepository;
     private final BlockedIpRepository blockedIpRepository;
     private final UserRepository userRepository;
+    private final com.cyberguard.platform.repository.ThreatRepository threatRepository;
     private final IncidentService incidentService;
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
@@ -57,7 +58,8 @@ public class ResponseActionService {
      * independently callable/unchanged. */
     @Transactional
     public Incident handleThreatResponse(Threat threat) {
-        return adaptiveModeEnabled ? autoRespondAdaptive(threat) : autoRespond(threat);
+        return adaptiveModeEnabled && !"RULE".equals(threat.getDetectorType())
+                ? autoRespondAdaptive(threat) : autoRespond(threat);
     }
 
     /** Runs the automated playbook for a newly detected threat. */
@@ -76,18 +78,18 @@ public class ResponseActionService {
 
             quarantineThreat(threat, null);
             incident = incidentService.createAutomatedIncident(threat);
-            recordAction(ActionType.GENERATE_INCIDENT, incident.getIncidentNumber(), incident, threat, null,
+            recordAction(ActionStatus.SUCCESS, ActionType.GENERATE_INCIDENT, incident.getIncidentNumber(), incident, threat, null,
                     "Automatically generated incident " + incident.getIncidentNumber());
         }
 
-        notificationService.notifyAllAdmins(
+        int notified = notificationService.notifyAllAdmins(
                 threat.getSeverity() == Severity.CRITICAL ? "Critical Risk Detected" : "New Threat Detected",
-                threat.getThreatType() + " from " + threat.getSourceIp() + " | Confidence: " + threat.getConfidenceScore() + "%",
+                threat.getThreatType() + " from " + threat.getSourceIp() + ("RULE".equals(threat.getDetectorType()) ? " | Detector: RULE | Confidence: not applicable" : " | Confidence: " + threat.getConfidenceScore() + "%"),
                 threat.getSeverity() == Severity.CRITICAL ? NotificationType.CRITICAL : NotificationType.THREAT,
                 threat.getSeverity(),
                 threat.getSeverity() == Severity.CRITICAL ? "critical" : "threat"
         );
-        recordAction(ActionType.NOTIFY_ADMIN, "ALL_ADMINS", incident, threat, null, "Notified administrators of new threat");
+        recordAction(notified > 0 ? ActionStatus.SUCCESS : ActionStatus.FAILED, ActionType.NOTIFY_ADMIN, "ALL_ADMINS", incident, threat, null, "Created " + notified + " administrator dashboard notifications; email delivery is not confirmed");
 
         return incident;
     }
@@ -101,19 +103,20 @@ public class ResponseActionService {
      */
     @Transactional
     public Incident autoRespondAdaptive(Threat threat) {
+        PolicyRecommendationResponse recommendation;
         try {
             double confidence = threat.getConfidenceScore() != null
                     ? threat.getConfidenceScore().doubleValue() / 100.0 : 0.0;
-            PolicyRecommendationResponse recommendation = aiServiceClient.recommendAction(
+            recommendation = aiServiceClient.recommendAction(
                     threat.getThreatType().name(), threat.getSeverity().name(), confidence);
             if (recommendation == null || recommendation.getRecommendedAction() == null) {
                 throw new IllegalStateException("AI service returned an empty policy recommendation");
             }
-            return executeRecommendedAction(threat, recommendation);
         } catch (Exception ex) {
             log.warn("Adaptive response policy unavailable, falling back to static autoRespond(): {}", ex.getMessage());
             return autoRespond(threat);
         }
+        return executeRecommendedAction(threat, recommendation);
     }
 
     private Incident executeRecommendedAction(Threat threat, PolicyRecommendationResponse recommendation) {
@@ -142,7 +145,7 @@ public class ResponseActionService {
             case "ESCALATE":
                 quarantineThreat(threat, null);
                 incident = incidentService.createAutomatedIncident(threat);
-                recordAction(ActionType.GENERATE_INCIDENT, incident.getIncidentNumber(), incident, threat, null,
+                recordAction(ActionStatus.SUCCESS, ActionType.GENERATE_INCIDENT, incident.getIncidentNumber(), incident, threat, null,
                         reasonPrefix + "escalated to incident " + incident.getIncidentNumber());
                 break;
             case "NOTIFY_ONLY":
@@ -150,15 +153,15 @@ public class ResponseActionService {
                 break;
         }
 
-        notificationService.notifyAllAdmins(
+        int notified = notificationService.notifyAllAdmins(
                 "ESCALATE".equals(action) ? "Critical Risk Detected" : "Adaptive Response: " + action,
-                threat.getThreatType() + " from " + threat.getSourceIp() + " | Confidence: " + threat.getConfidenceScore() + "%",
+                threat.getThreatType() + " from " + threat.getSourceIp() + ("RULE".equals(threat.getDetectorType()) ? " | Detector: RULE | Confidence: not applicable" : " | Confidence: " + threat.getConfidenceScore() + "%"),
                 "ESCALATE".equals(action) ? NotificationType.CRITICAL : NotificationType.THREAT,
                 threat.getSeverity(),
                 "ESCALATE".equals(action) ? "critical" : "threat"
         );
-        recordAction(ActionType.NOTIFY_ADMIN, "ALL_ADMINS", incident, threat, null,
-                reasonPrefix + "notified administrators");
+        recordAction(notified > 0 ? ActionStatus.SUCCESS : ActionStatus.FAILED, ActionType.NOTIFY_ADMIN, "ALL_ADMINS", incident, threat, null,
+                reasonPrefix + "created " + notified + " administrator dashboard notifications; email delivery is not confirmed");
 
         return incident;
     }
@@ -172,7 +175,8 @@ public class ResponseActionService {
         }, () -> blockedIpRepository.save(BlockedIp.builder()
                 .ipAddress(ipAddress).reason(reason).blockedBy(performedBy).active(true).build()));
 
-        return recordAction(ActionType.BLOCK_IP, ipAddress, incident, threat, performedBy, reason);
+        return recordAction(ActionStatus.PENDING, ActionType.BLOCK_IP, ipAddress, incident, threat, performedBy,
+                "Database block request recorded; network enforcement is not configured. " + reason);
     }
 
     @Transactional
@@ -182,25 +186,29 @@ public class ResponseActionService {
         user.setStatus(UserStatus.DISABLED);
         userRepository.save(user);
 
-        return recordAction(ActionType.DISABLE_USER, user.getUsername(), null, threat, performedBy, reason);
+        return recordAction(ActionStatus.SUCCESS, ActionType.DISABLE_USER, user.getUsername(), null, threat, performedBy, reason);
     }
 
     @Transactional
     public ResponseAction quarantineThreat(Threat threat, User performedBy) {
+        Threat persisted = threatRepository.findById(threat.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Threat not found"));
+        persisted.setStatus(ThreatStatus.MITIGATED);
+        threatRepository.saveAndFlush(persisted);
         threat.setStatus(ThreatStatus.MITIGATED);
-        return recordAction(ActionType.QUARANTINE_THREAT, "Threat#" + threat.getId(), null, threat, performedBy,
-                "Threat quarantined and marked as mitigated");
+        return recordAction(ActionStatus.SUCCESS, ActionType.QUARANTINE_THREAT, "Threat#" + threat.getId(), null, threat, performedBy,
+                "Threat status persisted as MITIGATED in CyberGuard; no host or network isolation performed");
     }
 
     public Page<ResponseAction> getActions(Pageable pageable) {
         return responseActionRepository.findAllByOrderByCreatedAtDesc(pageable);
     }
 
-    private ResponseAction recordAction(ActionType type, String target, Incident incident, Threat threat,
+    private ResponseAction recordAction(ActionStatus status, ActionType type, String target, Incident incident, Threat threat,
                                          User performedBy, String details) {
         ResponseAction action = ResponseAction.builder()
                 .incident(incident).threat(threat).actionType(type).target(target)
-                .status(ActionStatus.SUCCESS)
+                .status(status)
                 .triggeredBy(performedBy == null ? TriggerSource.AUTOMATED : TriggerSource.MANUAL)
                 .performedBy(performedBy)
                 .details(details)

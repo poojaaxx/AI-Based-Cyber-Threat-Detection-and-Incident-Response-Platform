@@ -24,6 +24,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class MonitoringController {
 
     private final MonitoringService monitoringService;
+    private final com.cyberguard.platform.repository.SecurityEventRepository securityEvents;
+
+    @GetMapping("/security-events")
+    public ResponseEntity<Page<com.cyberguard.platform.entity.SecurityEvent>> getSecurityEvents(
+            @PageableDefault(size = 50) Pageable pageable) {
+        return ResponseEntity.ok(securityEvents.findAllByOrderByIdDesc(pageable));
+    }
 
     @GetMapping("/system-logs")
     public ResponseEntity<Page<SystemLog>> getSystemLogs(@PageableDefault(size = 25) Pageable pageable) {

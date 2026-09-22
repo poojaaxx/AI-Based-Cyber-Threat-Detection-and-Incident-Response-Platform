@@ -41,13 +41,17 @@ export default function NotificationCenter() {
   const panelRef = useRef(null);
 
   const loadInitial = () => {
-    notificationService.getNotifications({ size: 15 }).then(({ data }) => setItems(data.content)).catch(() => {});
+    notificationService.getNotifications({ size: 15, sort: 'createdAt,desc' }).then(({ data }) => setItems(data.content)).catch(() => {});
     notificationService.getUnreadCount().then(({ data }) => setUnreadCount(data.unreadCount)).catch(() => {});
   };
 
-  useEffect(() => { loadInitial(); }, []);
+  useEffect(() => {
+    loadInitial();
+    window.addEventListener('cg:stream-connected', loadInitial);
+    return () => window.removeEventListener('cg:stream-connected', loadInitial);
+  }, []);
 
-  const { connected } = useEventStreamStatus();
+  const { connected, state } = useEventStreamStatus();
 
   useEffect(() => {
     const handleNotification = (e) => {
@@ -111,7 +115,7 @@ export default function NotificationCenter() {
         onClick={handleToggle}
         className="relative text-slate-400 hover:text-cg-accent transition"
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
-        title={connected ? 'Live updates connected' : 'Reconnecting to live updates...'}
+        title={state}
       >
         <Bell size={20} />
         <span

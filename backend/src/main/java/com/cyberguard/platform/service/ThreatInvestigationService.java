@@ -59,9 +59,9 @@ public class ThreatInvestigationService {
                 .timestamp(threat.getDetectedAt())
                 .eventType("DETECTED")
                 .title(threat.getThreatType() + " detected")
-                .description(String.format("AI classified this event as %s (%s severity, %.1f%% confidence) from %s.",
+                .description("RULE".equals(threat.getDetectorType()) ? threat.getReasoning() : String.format("AI classified this event as %s (%s severity, %.1f%% confidence) from %s.",
                         threat.getThreatType(), threat.getSeverity(), threat.getConfidenceScore(), threat.getSourceIp()))
-                .actor("AI Threat Detection Engine")
+                .actor("RULE".equals(threat.getDetectorType()) ? "Authentication Rule Detector" : "AI Threat Detection Engine")
                 .build());
 
         for (ResponseAction action : actions) {

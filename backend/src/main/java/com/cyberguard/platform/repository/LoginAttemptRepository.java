@@ -11,5 +11,6 @@ import java.util.List;
 public interface LoginAttemptRepository extends JpaRepository<LoginAttempt, Long> {
     Page<LoginAttempt> findAllByOrderByCreatedAtDesc(Pageable pageable);
     List<LoginAttempt> findByIpAddressAndSuccessFalseAndCreatedAtAfter(String ipAddress, LocalDateTime since);
+    List<LoginAttempt> findByUserIdAndOutcomeOrderByIdDesc(Long userId, String outcome, Pageable pageable);
     long countBySuccessFalseAndCreatedAtAfter(LocalDateTime since);
 }

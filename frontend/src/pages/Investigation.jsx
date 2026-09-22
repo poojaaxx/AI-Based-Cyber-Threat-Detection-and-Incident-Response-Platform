@@ -69,11 +69,11 @@ export default function Investigation() {
         <div className="grid grid-cols-3 gap-4 text-sm">
           <div>
             <p className="text-xs text-slate-500 uppercase">Risk Score</p>
-            <p className="text-slate-200 font-semibold">{Number(explanation.riskScore).toFixed(0)}/100</p>
+            <p className="text-slate-200 font-semibold">{explanation.riskScore == null ? 'N/A' : `${Number(explanation.riskScore).toFixed(0)}/100`}</p>
           </div>
           <div>
             <p className="text-xs text-slate-500 uppercase">Confidence</p>
-            <p className="text-slate-200 font-semibold">{Number(threat.confidenceScore).toFixed(0)}%</p>
+            <p className="text-slate-200 font-semibold">{threat.confidenceScore == null ? 'N/A' : `${Number(threat.confidenceScore).toFixed(0)}%`}</p>
           </div>
           <div>
             <p className="text-xs text-slate-500 uppercase">Incident</p>

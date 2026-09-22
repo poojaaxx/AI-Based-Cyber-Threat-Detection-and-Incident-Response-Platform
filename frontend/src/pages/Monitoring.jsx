@@ -3,6 +3,7 @@ import { Activity, Inbox } from 'lucide-react';
 import { monitoringService } from '../services/monitoringService';
 import { Skeleton } from '../components/common/Skeleton';
 import EmptyState from '../components/common/EmptyState';
+import LiveSecurityEvents from '../components/monitoring/LiveSecurityEvents';
 
 const TABS = ['System Logs', 'Login Attempts', 'Network Events'];
 
@@ -26,10 +27,24 @@ export default function Monitoring() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    if (tab === 0) monitoringService.getSystemLogs().then(({ data }) => setSystemLogs(data.content)).finally(() => setLoading(false));
-    if (tab === 1) monitoringService.getLoginAttempts().then(({ data }) => setLoginAttempts(data.content)).finally(() => setLoading(false));
-    if (tab === 2) monitoringService.getNetworkEvents().then(({ data }) => setNetworkEvents(data.content)).finally(() => setLoading(false));
+    let active = true;
+    const load = () => {
+      setLoading(true);
+      const request = tab === 0 ? monitoringService.getSystemLogs() : tab === 1
+        ? monitoringService.getLoginAttempts() : monitoringService.getNetworkEvents();
+      request.then(({ data }) => {
+        if (active) [setSystemLogs, setLoginAttempts, setNetworkEvents][tab](data.content);
+      }).catch(() => {}).finally(() => { if (active) setLoading(false); });
+    };
+    load();
+    const refreshLogin = () => { if (tab === 1) load(); };
+    window.addEventListener('cg:security-event', refreshLogin);
+    window.addEventListener('cg:stream-connected', load);
+    return () => {
+      active = false;
+      window.removeEventListener('cg:security-event', refreshLogin);
+      window.removeEventListener('cg:stream-connected', load);
+    };
   }, [tab]);
 
   const levelColor = { INFO: 'text-cg-info', WARN: 'text-cg-warning', ERROR: 'text-cg-danger', CRITICAL: 'text-cg-danger font-bold' };
@@ -40,8 +55,10 @@ export default function Monitoring() {
         <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
           <Activity size={20} className="text-cg-accent" /> Real-Time Security Monitoring
         </h2>
-        <p className="text-sm text-slate-500 mt-1">Live system logs, authentication attempts, and network events.</p>
+        <p className="text-sm text-slate-500 mt-1">Real authentication activity. System and network tabs contain stored history; network collection is not enabled.</p>
       </div>
+
+      <LiveSecurityEvents />
 
       <div className="flex gap-2 border-b border-cg-border">
         {TABS.map((t, idx) => (

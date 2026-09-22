@@ -109,9 +109,8 @@
         <!-- Reports -->
         <dependency>
             <groupId>com.itextpdf</groupId>
-            <artifactId>itext7-core</artifactId>
+            <artifactId>layout</artifactId>
             <version>7.2.5</version>
-            <type>pom</type>
         </dependency>
         <dependency>
             <groupId>org.apache.poi</groupId>
@@ -122,6 +121,12 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
             <version>1.10.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <!-- API docs -->

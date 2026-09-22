@@ -1,3 +1,4 @@
+import { useEventStreamStatus } from '../context/EventStreamContext';
 import { useEffect, useState } from 'react';
 import { ShieldAlert, AlertTriangle, FileWarning, Activity, Bot, RefreshCw, Shield, Flame, Inbox } from 'lucide-react';
 import {
@@ -14,6 +15,7 @@ import { useCountUp } from '../hooks/useCountUp';
 import { SEVERITY_COLORS, PIE_COLORS, RISK_LEVEL_COLOR, CHART_TOOLTIP_STYLE, CHART_AXIS_PROPS } from '../utils/chartColors';
 
 export default function Dashboard() {
+  const { connected, state } = useEventStreamStatus();
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [riskScore, setRiskScore] = useState(null);
@@ -50,7 +52,8 @@ export default function Dashboard() {
       setLastUpdated(new Date());
     };
     window.addEventListener('cg:dashboard-update', handleDashboardUpdate);
-    return () => window.removeEventListener('cg:dashboard-update', handleDashboardUpdate);
+    window.addEventListener('cg:stream-connected', handleDashboardUpdate);
+    return () => { window.removeEventListener('cg:dashboard-update', handleDashboardUpdate); window.removeEventListener('cg:stream-connected', handleDashboardUpdate); };
   }, []);
 
   const securityScoreDisplay = useCountUp(summary?.securityScore);
@@ -100,10 +103,10 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="flex items-center gap-2 text-xs text-slate-500">
         <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cg-accent opacity-75" />
+          {connected && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cg-accent opacity-75" />}
           <span className="relative inline-flex rounded-full h-2 w-2 bg-cg-accent" />
         </span>
-        Live
+        {state}
         {lastUpdated && <span>&middot; last update {lastUpdated.toLocaleTimeString()}</span>}
       </div>
 
@@ -258,7 +261,7 @@ export default function Dashboard() {
                   <p className="text-xs text-slate-500">{t.sourceIp} &rarr; {t.destinationIp}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-500">{Number(t.confidenceScore).toFixed(1)}%</span>
+                  <span className="text-xs text-slate-500">{t.confidenceScore == null ? 'N/A' : `${Number(t.confidenceScore).toFixed(1)}%`}</span>
                   <SeverityBadge severity={t.severity} />
                 </div>
               </div>

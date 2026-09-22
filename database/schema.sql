@@ -28,6 +28,7 @@ CREATE TABLE users (
     status ENUM('ACTIVE','DISABLED','LOCKED') NOT NULL DEFAULT 'ACTIVE',
     last_login_at DATETIME NULL,
     failed_login_attempts INT NOT NULL DEFAULT 0,
+    locked_until DATETIME NULL,
     must_change_password BOOLEAN NOT NULL DEFAULT FALSE,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -126,7 +127,11 @@ CREATE TABLE threats (
     threat_type ENUM('MALWARE','DDOS','SQL_INJECTION','XSS','BRUTE_FORCE',
                       'PORT_SCAN','PHISHING','RANSOMWARE','INSIDER_THREAT','UNKNOWN') NOT NULL,
     severity ENUM('LOW','MEDIUM','HIGH','CRITICAL') NOT NULL,
-    confidence_score DECIMAL(5,2) NOT NULL,
+    confidence_score DECIMAL(5,2) NULL,
+    detector_type VARCHAR(20),
+    detection_key VARCHAR(100) UNIQUE,
+    login_attempt_id BIGINT,
+    rule_evidence TEXT,
     source_ip VARCHAR(45),
     destination_ip VARCHAR(45),
     source_port INT,
@@ -159,7 +164,7 @@ CREATE TABLE incidents (
     severity ENUM('LOW','MEDIUM','HIGH','CRITICAL') NOT NULL,
     status ENUM('OPEN','ASSIGNED','IN_PROGRESS','RESOLVED','CLOSED') NOT NULL DEFAULT 'OPEN',
     threat_id BIGINT NULL,
-    reported_by BIGINT NOT NULL,
+    reported_by BIGINT NULL, -- NULL identifies a system-generated incident
     assigned_to BIGINT NULL,
     resolution_notes TEXT,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -241,6 +246,7 @@ CREATE TABLE login_attempts (
     username_attempted VARCHAR(60),
     ip_address VARCHAR(45),
     success BOOLEAN NOT NULL,
+    outcome VARCHAR(30),
     user_agent VARCHAR(255),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
@@ -347,3 +353,26 @@ CREATE TABLE simulation_runs (
 );
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+CREATE TABLE security_events (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    login_attempt_id BIGINT NOT NULL UNIQUE,
+    source VARCHAR(255) NOT NULL,
+    event_type VARCHAR(255) NOT NULL,
+    username VARCHAR(255),
+    source_ip VARCHAR(255),
+    outcome VARCHAR(255) NOT NULL,
+    detector_type VARCHAR(255),
+    result VARCHAR(255) NOT NULL,
+    observed_at DATETIME(6) NOT NULL,
+    ingested_at DATETIME(6) NOT NULL,
+    detected_at DATETIME(6),
+    processing_latency_ms BIGINT,
+    threat_id BIGINT,
+    incident_id BIGINT,
+    evidence TEXT,
+    INDEX idx_security_events_observed (observed_at),
+    FOREIGN KEY (login_attempt_id) REFERENCES login_attempts(id),
+    FOREIGN KEY (threat_id) REFERENCES threats(id),
+    FOREIGN KEY (incident_id) REFERENCES incidents(id)
+);

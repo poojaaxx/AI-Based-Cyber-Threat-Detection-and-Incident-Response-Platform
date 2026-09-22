@@ -20,7 +20,7 @@ export default function Threats() {
   const load = () => {
     setLoading(true);
     threatService
-      .getThreats({ page, size: 15, severity: severity || undefined, type: type || undefined })
+      .getThreats({ page, size: 15, sort: 'detectedAt,desc', severity: severity || undefined, type: type || undefined })
       .then(({ data }) => {
         setThreats(data.content);
         setTotalPages(data.totalPages);
@@ -30,6 +30,9 @@ export default function Threats() {
 
   useEffect(() => {
     load();
+    window.addEventListener('cg:dashboard-update', load);
+    window.addEventListener('cg:stream-connected', load);
+    return () => { window.removeEventListener('cg:dashboard-update', load); window.removeEventListener('cg:stream-connected', load); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, severity, type]);
 
@@ -38,9 +41,9 @@ export default function Threats() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
-            <ShieldAlert size={20} className="text-cg-accent" /> AI Threat Detection Results
+            <ShieldAlert size={20} className="text-cg-accent" /> Threat Detection Results
           </h2>
-          <p className="text-sm text-slate-500 mt-1">Threats detected and classified by the AI engine in real time.</p>
+          <p className="text-sm text-slate-500 mt-1">Model and rule findings with recorded evidence.</p>
         </div>
         <div className="flex gap-2">
           <select className="cg-input" value={severity} onChange={(e) => { setSeverity(e.target.value); setPage(0); }}>
@@ -82,7 +85,7 @@ export default function Threats() {
                   <Link to={`/threats/${t.id}`} className="text-slate-200 hover:text-cg-accent transition-colors">{t.threatType}</Link>
                 </td>
                 <td className="py-2.5 pr-4"><SeverityBadge severity={t.severity} /></td>
-                <td className="py-2.5 pr-4 text-slate-400">{Number(t.confidenceScore).toFixed(1)}%</td>
+                <td className="py-2.5 pr-4 text-slate-400">{t.confidenceScore == null ? 'N/A' : `${Number(t.confidenceScore).toFixed(1)}%`}</td>
                 <td className="py-2.5 pr-4 text-slate-400 font-mono text-xs">{t.sourceIp}</td>
                 <td className="py-2.5 pr-4 text-slate-400 font-mono text-xs">{t.destinationIp}</td>
                 <td className="py-2.5 pr-4"><StatusBadge status={t.status} /></td>
