@@ -46,7 +46,7 @@ services:
       DB_PASSWORD: root
       AI_SERVICE_URL: http://ai-service:8000
       CORS_ALLOWED_ORIGINS: http://localhost:5173
-      JWT_SECRET: c2VjdXJlLWNoYW5nZS10aGlzLXNlY3JldC1rZXktZm9yLWp3dC1zaWduaW5nLWluLXByb2R1Y3Rpb24tZW52aXJvbm1lbnQ=
+      JWT_SECRET: ${JWT_SECRET}
 
   frontend:
     build:
